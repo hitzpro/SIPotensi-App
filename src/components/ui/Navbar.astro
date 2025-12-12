@@ -1,0 +1,72 @@
+<div class="navbar bg-base-100 shadow-sm sticky top-0 z-40 px-4">
+    <!-- Kiri: Brand / Dashboard Text -->
+    <div class="navbar-start">
+      <!-- Menggunakan text-primary agar warnanya Hijau Emerald -->
+      <div class="text-xl font-bold text-primary">Dashboard</div>
+    </div>
+  
+    <!-- Kanan: Profile & Dropdown -->
+    <div class="navbar-end">
+      <!-- Nama User (Diisi oleh JS) -->
+      <span id="nav-username" class="mr-3 text-sm font-semibold hidden sm:inline-block skeleton w-24 h-4 rounded"></span>
+      
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
+          <!-- Avatar Inisial (Diisi oleh JS) -->
+          <div class="bg-primary text-primary-content rounded-full w-10 ring ring-primary ring-offset-base-100 ring-offset-2">
+            <span id="nav-initial" class="text-xl font-bold">...</span>
+          </div>
+        </div>
+        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+          <!-- Hapus menu yang tidak diminta, sisakan Logout -->
+          <li>
+              <button id="btn-logout" class="text-error font-bold hover:bg-error hover:text-white">
+                  <i class="fa-solid fa-sign-out-alt"></i> Logout
+              </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <script is:inline>
+    // 1. Ambil data user dari LocalStorage
+    const userString = localStorage.getItem('user');
+    
+    // Elemen DOM
+    const nameEl = document.getElementById('nav-username');
+    const initialEl = document.getElementById('nav-initial');
+    const logoutBtn = document.getElementById('btn-logout');
+  
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        
+        // Update Nama
+        nameEl.innerText = user.nama || "User";
+        nameEl.classList.remove('skeleton'); // Hapus efek loading
+  
+        // Update Inisial (Ambil huruf pertama)
+        const initial = user.nama ? user.nama.charAt(0).toUpperCase() : "U";
+        initialEl.innerText = initial;
+  
+      } catch (e) {
+        console.error("Gagal parse user data", e);
+      }
+    } else {
+      // Kalau tidak ada user login, lempar ke halaman login
+      window.location.href = '/';
+    }
+  
+    // 2. Logika Logout
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+         // Konfirmasi sederhana (atau bisa panggil showConfirm global kamu)
+         if(confirm("Apakah Anda yakin ingin keluar?")) {
+             localStorage.removeItem('token');
+             localStorage.removeItem('user');
+             window.location.href = '/'; // Kembali ke root/login
+         }
+      });
+    }
+  </script>

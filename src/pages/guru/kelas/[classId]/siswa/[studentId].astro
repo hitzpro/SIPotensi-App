@@ -1,0 +1,157 @@
+---
+// src/pages/guru/kelas/[classId]/siswa/[studentId].astro
+export const prerender = false;
+
+import Layout from '../../../../../layouts/Layout.astro';
+import Navbar from '../../../../../components/ui/Navbar.astro';
+import ToastSystem from '../../../../../components/ui/ToastSystem.astro';
+import AlertSystem from '../../../../../components/ui/AlertSystem.astro';
+import ModalForm from '../../../../../components/ui/ModalForm.astro';
+
+const { classId, studentId } = Astro.params;
+
+if (!classId || !studentId) {
+    return Astro.redirect('/guru');
+}
+---
+
+<Layout title="Detail Siswa">
+    <ToastSystem />
+    <AlertSystem />
+    <Navbar />
+
+    
+
+    <main id="student-detail-main" data-class-id={classId} data-student-id={studentId} class="container mx-auto px-4 py-8 max-w-6xl pb-32">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div class="flex items-center gap-4">
+                <a href={`/guru/kelas/${classId}`} class="btn btn-circle btn-ghost btn-sm border border-gray-300">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 flex items-start gap-2">
+                        <i class="fa-solid fa-user-graduate text-primary mt-1"></i>
+                        <span id="header-nama" class="skeleton w-48 h-8 rounded block leading-tight"></span>
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">Detail Akademik & History Tugas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="space-y-6">
+                <div class="card bg-base-100 shadow-md border border-gray-200">
+                    <div class="card-body p-5">
+                        <h3 class="card-title text-sm uppercase text-gray-500 mb-4">Identitas Siswa</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-400">NISN</label>
+                                <p id="info-nisn" class="font-mono font-bold text-gray-700 skeleton h-5 w-24"></p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Nama Lengkap</label>
+                                <p id="info-nama" class="font-bold text-gray-700 skeleton h-5 w-40"></p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">ID Kelas</label>
+                                <p class="text-sm text-gray-600">#{classId}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-base-100 shadow-md border border-gray-200">
+                    <div class="card-body p-5">
+                        <h3 class="card-title text-sm uppercase text-gray-500 mb-2">Kelengkapan Data</h3>
+                        <ul class="space-y-3 text-sm" id="checklist-container">
+                            <li class="flex items-center gap-3 text-gray-400">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat data...
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="card bg-base-100 shadow-md border border-gray-200">
+                    <div class="card-body p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-file-pen text-warning mr-2"></i> Nilai Ujian</h3>
+                            <button id="btn-save-ujian" class="btn btn-sm btn-primary text-white">
+                                <i class="fa-solid fa-save"></i> Simpan
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label font-semibold">Nilai UTS</label>
+                                <input type="number" id="input-uts" class="input input-bordered w-full" placeholder="0-100" min="0" max="100">
+                            </div>
+                            <div class="form-control">
+                                <label class="label font-semibold">Nilai UAS</label>
+                                <input type="number" id="input-uas" class="input input-bordered w-full" placeholder="0-100" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-base-100 shadow-md border border-gray-200 overflow-hidden">
+                    <div class="card-body p-0">
+                        <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-lg text-gray-800">
+                                <i class="fa-solid fa-list-check text-success mr-2"></i> Daftar Tugas
+                            </h3>
+                            <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded border">History Pengerjaan</span>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="table w-full">
+                                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                                    <tr>
+                                        <th>Nama Tugas</th>
+                                        <th class="text-center">Nilai</th>
+                                        <th class="text-center">Preview</th>
+                                        <th class="text-center">Edit Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tugas-table-body">
+                                    <tr><td colspan="4" class="text-center py-4">Memuat tugas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <ModalForm id="modal_edit_tugas" title="Edit Nilai Tugas" submitLabel="Update Nilai">
+        <input type="hidden" name="idTugas" id="edit-id-tugas">
+        <div class="form-control">
+            <label class="label font-semibold" id="label-nama-tugas">Nama Tugas</label>
+            <input type="number" name="nilai" id="edit-nilai-tugas" class="input input-bordered" required min="0" max="100">
+        </div>
+    </ModalForm>
+
+    <dialog id="modal_preview_quiz" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box w-full sm:w-11/12 max-w-4xl h-[85vh] flex flex-col p-0 bg-gray-50 rounded-t-2xl sm:rounded-2xl mx-auto">
+            <div class="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-10 shrink-0">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass-chart text-primary"></i> 
+                    Hasil Pengerjaan
+                </h3>
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost bg-gray-100">✕</button></form>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="quiz-preview-content">
+                <div class="flex justify-center py-10"><span class="loading loading-spinner"></span></div>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+</Layout>
+
+<script src="../../../../../scripts/pages/guru/student-detail.js"></script>

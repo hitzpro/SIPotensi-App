@@ -1,0 +1,116 @@
+---
+// src/components/ui/AlertSystem.astro
+---
+
+<!-- MODAL CONFIRMATION -->
+<!-- Pastikan ID di sini 'system_confirm_modal' cocok dengan script di bawah -->
+<dialog id="system_confirm_modal" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box">
+      <!-- Icon Warning -->
+      <div class="flex justify-center mb-4">
+          <div id="confirm-icon-container" class="p-3 rounded-full bg-warning/20">
+              <i class="fa-solid fa-triangle-exclamation text-3xl text-warning"></i>
+          </div>
+      </div>
+
+      <!-- Title -->
+      <h3 id="system_confirm_title" class="font-bold text-lg text-center text-gray-800">
+          Konfirmasi
+      </h3>
+      
+      <!-- Message (Support HTML Bold) -->
+      <div id="system_confirm_message" class="py-4 text-center text-gray-600">
+          Apakah Anda yakin?
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-action justify-center gap-2">
+          <form method="dialog">
+              <!-- Tombol Batal -->
+              <button id="system_btn_cancel" class="btn btn-ghost">
+                  Batal
+              </button>
+          </form>
+          <!-- Tombol Ya -->
+          <button id="system_btn_confirm" class="btn btn-error text-white">
+              Ya, Lanjutkan
+          </button>
+      </div>
+  </div>
+  
+  <!-- Backdrop close -->
+  <form method="dialog" class="modal-backdrop">
+      <button id="system_btn_backdrop">close</button>
+  </form>
+</dialog>
+
+<script is:inline>
+  // Definisikan ke window agar bisa dipanggil global
+  window.showConfirm = (title, message, confirmText = 'Ya', type = 'danger') => {
+      return new Promise((resolve) => {
+          // 1. Ambil Elemen
+          const modal = document.getElementById('system_confirm_modal');
+          const titleEl = document.getElementById('system_confirm_title');
+          const msgEl = document.getElementById('system_confirm_message');
+          const btnConfirm = document.getElementById('system_btn_confirm');
+          const btnCancel = document.getElementById('system_btn_cancel');
+          const btnBackdrop = document.getElementById('system_btn_backdrop');
+          const iconContainer = document.getElementById('confirm-icon-container');
+
+          // SAFETY CHECK: Jika elemen tidak ketemu, return false (biar gak error console)
+          if (!modal || !titleEl || !msgEl || !btnConfirm) {
+              console.error("AlertSystem Error: Elements not found in DOM");
+              resolve(false);
+              return;
+          }
+
+          // 2. Set Content
+          titleEl.innerText = title;      // Judul tetap teks biasa
+          msgEl.innerHTML = message;      // PERBAIKAN: Gunakan innerHTML agar <b> terbaca
+          btnConfirm.innerText = confirmText;
+
+          // 3. Set Style Berdasarkan Type
+          if (type === 'danger') {
+              btnConfirm.className = "btn btn-error text-white";
+              iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-3xl text-error"></i>';
+              iconContainer.className = "p-3 rounded-full bg-error/20";
+          } else if (type === 'primary') {
+              btnConfirm.className = "btn btn-primary text-white";
+              iconContainer.innerHTML = '<i class="fa-solid fa-circle-info text-3xl text-primary"></i>';
+              iconContainer.className = "p-3 rounded-full bg-primary/20";
+          } else {
+              btnConfirm.className = "btn btn-success text-white";
+              iconContainer.innerHTML = '<i class="fa-solid fa-check text-3xl text-success"></i>';
+              iconContainer.className = "p-3 rounded-full bg-success/20";
+          }
+
+          // 4. Handler Functions (Untuk membersihkan Event Listener setelah klik)
+          const handleConfirm = () => {
+              cleanup();
+              modal.close();
+              resolve(true); // User klik YA
+          };
+
+          const handleCancel = () => {
+              cleanup();
+              // Modal otomatis close karena form method="dialog"
+              resolve(false); // User klik BATAL
+          };
+
+          // 5. Cleanup Event Listeners (Penting agar tidak double trigger)
+          const cleanup = () => {
+              btnConfirm.removeEventListener('click', handleConfirm);
+              btnCancel.removeEventListener('click', handleCancel);
+              btnBackdrop.removeEventListener('click', handleCancel);
+          };
+
+          // 6. Pasang Event Listener Baru
+          btnConfirm.addEventListener('click', handleConfirm);
+          btnCancel.addEventListener('click', handleCancel);
+          btnBackdrop.addEventListener('click', handleCancel);
+
+          // 7. Tampilkan Modal
+          modal.showModal();
+      });
+  };
+</script>

@@ -1,0 +1,99 @@
+---
+import FormInput from '../ui/FormInput.astro';
+import Alert from '../ui/Alert.astro';
+---
+
+<div class="card w-full max-w-sm bg-white shadow-xl border border-gray-200">
+  <div class="card-body p-8">
+    
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
+         <span class="text-3xl">🏫</span>
+      </div>
+      <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Sistem Akademik</h2>
+      <p class="text-sm text-gray-500 mt-2 font-medium">Silakan login untuk melanjutkan</p>
+    </div>
+
+    <Alert />
+
+    <div class="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-xl border border-gray-200 mb-6">
+      <button 
+        id="tab-guru" 
+        class="py-2.5 text-sm font-bold rounded-lg transition-all duration-200 shadow-sm bg-white text-primary"
+      >
+        Guru
+      </button>
+      <button 
+        id="tab-siswa" 
+        class="py-2.5 text-sm font-bold rounded-lg transition-all duration-200 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+      >
+        Siswa
+      </button>
+    </div>
+
+    <form id="loginForm" class="flex flex-col gap-5">
+      <input type="hidden" id="role-input" value="guru">
+
+      <div id="form-guru" class="animate-fade-in">
+        <FormInput 
+          id="email"
+          type="email" 
+          name="email" 
+          label="Email Sekolah" 
+          placeholder="nama@sekolah.sch.id" 
+          iconName="fa-solid:envelope" 
+        />
+      </div>
+
+      <div id="form-siswa" class="hidden animate-fade-in">
+        <FormInput 
+          id="nisn"
+          type="number" 
+          name="nisn" 
+          label="NISN" 
+          placeholder="Nomor Induk Siswa" 
+          iconName="fa-solid:id-card" 
+        />
+      </div>
+
+      <div>
+        <FormInput 
+            id="password"
+            type="password" 
+            name="password" 
+            label="Password" 
+            placeholder="••••••••" 
+            iconName="fa-solid:lock" 
+            required={true}
+        />
+        <div id="hint-siswa" class="hidden mt-2 text-right">
+            <div class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-500 border border-gray-200">
+                <span class="font-semibold">Info:</span> Password default = NISN
+            </div>
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <button 
+        type="submit" 
+        id="btn-submit" 
+        class="btn btn-primary w-full text-white font-bold tracking-wide shadow-md hover:shadow-lg transition-all border-none bg-emerald-500 hover:bg-emerald-700"
+      >
+        MASUK
+      </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .animate-fade-in {
+    animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script src="../../scripts/components/auth/login-form.js"></script>

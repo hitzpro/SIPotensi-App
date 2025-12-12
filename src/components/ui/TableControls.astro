@@ -1,0 +1,30 @@
+---
+// src/components/ui/TableControls.astro
+---
+<!-- Tambahkan w-full agar justify-between berfungsi maksimal -->
+<div class="flex flex-col sm:flex-row gap-4 mb-4 justify-between items-center w-full">
+    
+    <!-- Search Bar: Full width di mobile, tapi max-width di desktop -->
+    <div class="relative w-full sm:w-72">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fa-solid fa-search text-gray-400"></i>
+        </div>
+        <input 
+            type="text" 
+            id="table-search-input" 
+            class="input input-bordered w-full pl-10 input-sm" 
+            placeholder="Cari nama atau NISN..."
+        >
+    </div>
+
+    <!-- Filter Rows: Rata kanan di desktop -->
+    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        <span class="text-xs text-gray-500 whitespace-nowrap">Baris per hal:</span>
+        <select id="table-row-limit" class="select select-bordered select-sm">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="100">Semua</option>
+        </select>
+    </div>
+</div>

@@ -1,0 +1,257 @@
+---
+// src/pages/guru/data-kelas/index.astro
+export const prerender = false;
+
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import ModalForm from '../../../components/ui/ModalForm.astro';
+import ToastSystem from '../../../components/ui/ToastSystem.astro';
+---
+
+<DashboardLayout title="Manajemen Data">
+    
+    <ToastSystem />
+
+    <div class="container mx-auto max-w-6xl space-y-6 md:space-y-8 px-1 pb-20">
+        
+        <div class="flex flex-col items-center gap-6">
+            <div class="text-center">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Manajemen Data</h1>
+                <p class="text-sm text-gray-500 mt-1">Kelola Kelas & Distribusi Tugas Sekolah</p>
+            </div>
+
+            <div class="bg-gray-100 p-1.5 rounded-full inline-flex relative shadow-inner mx-auto">
+                <button id="btn-tab-kelas" onclick="switchTab('kelas')" 
+                    class="px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 shadow-sm bg-white text-primary">
+                    <i class="fa-solid fa-chalkboard mr-2"></i> Data Kelas
+                </button>
+                <button id="btn-tab-tugas" onclick="switchTab('tugas')" 
+                    class="px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 text-gray-500 hover:text-gray-700">
+                    <i class="fa-solid fa-list-check mr-2"></i> Manajemen Tugas
+                </button>
+            </div>
+        </div>
+
+        <div id="content-kelas" class="fade-content w-full">
+            <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4">
+                <div class="w-full md:w-auto">
+                    <h3 class="font-bold text-lg text-gray-700 border-l-4 border-primary pl-3">Daftar Kelas</h3>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="search-kelas" class="input input-bordered input-sm w-full pl-8" placeholder="Cari nama kelas...">
+                    </div>
+                    <button onclick="document.getElementById('modal_add_class').showModal()" class="btn btn-primary text-white btn-sm shadow-md w-full sm:w-auto">
+                        <i class="fa-solid fa-plus"></i> Buat Kelas
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
+                <div class="w-full overflow-x-auto max-w-[calc(100vw-2rem)] md:max-w-full">
+                    <table class="table table-zebra w-full whitespace-nowrap">
+                        <thead class="bg-gray-50 text-gray-600 font-bold text-xs uppercase">
+                            <tr>
+                                <th class="w-12 text-center">No</th>
+                                <th>Nama Kelas</th>
+                                <th>Tahun Ajaran</th>
+                                <th class="text-center">Siswa</th>
+                                <th class="text-center">Tugas</th>
+                                <th class="text-center w-20">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-kelas-body" class="text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="empty-kelas" class="hidden flex-col items-center justify-center py-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-chalkboard text-2xl text-gray-300"></i>
+                    </div>
+                    <p class="text-gray-500 font-medium">Belum ada kelas.</p>
+                    <p class="text-xs text-gray-400">Silakan buat kelas baru terlebih dahulu.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-tugas" class="hidden fade-content w-full">
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-700 border-l-4 border-warning pl-3">Tugas Aktif</h3>
+                    <p class="text-xs text-gray-500 mt-1 pl-4">Monitoring tugas yang sedang berjalan.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+                    <select id="filter-kelas-tugas" class="select select-bordered select-sm w-full sm:w-40">
+                        <option value="all">Semua Kelas</option>
+                    </select>
+                    <div class="relative w-full sm:w-56">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="search-tugas" class="input input-bordered input-sm w-full pl-8" placeholder="Cari judul tugas...">
+                    </div>
+                    <button onclick="openModalTask()" class="btn btn-primary text-white btn-sm shadow-md w-full sm:w-auto">
+                        <i class="fa-solid fa-plus"></i> Tugas Baru
+                    </button>
+                </div>
+            </div>
+
+            <div id="task-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
+            
+            <div id="empty-tugas" class="hidden flex-col items-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-center shadow-sm">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-clipboard-list text-2xl text-blue-300"></i>
+                </div>
+                <h4 class="text-gray-600 font-bold">Belum ada tugas</h4>
+                <p class="text-sm text-gray-400 mt-1 max-w-xs">Buat tugas baru untuk dibagikan kepada siswa di kelas.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <ModalForm id="modal_add_class" title="Buat Kelas Baru" submitLabel="Simpan Kelas">
+        <div class="space-y-4">
+            <div class="form-control">
+                <label class="label font-semibold text-gray-600">Nama Kelas</label>
+                <input type="text" name="nama_kelas" class="input input-bordered w-full" placeholder="Contoh: XII IPA 1" required />
+            </div>
+            <div class="form-control">
+                <label class="label font-semibold text-gray-600">Tahun Ajaran</label>
+                <input type="text" name="tahun_ajaran" class="input input-bordered w-full" placeholder="Contoh: 2024/2025" required />
+            </div>
+        </div>
+    </ModalForm>
+
+    <dialog id="modal_create_task" class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+        <div class="modal-box w-full max-w-4xl p-0 rounded-t-xl sm:rounded-xl bg-base-100 h-[90vh] sm:h-auto overflow-hidden flex flex-col">
+            
+            <div class="bg-primary px-6 py-4 flex justify-between items-center text-white shrink-0">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Buat Tugas Baru
+                </h3>
+                <button type="button" class="btn btn-circle btn-ghost btn-sm text-white hover:bg-white/20" onclick="document.getElementById('modal_create_task').close()">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1">
+                <form id="form-create-task" class="space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700">Judul Tugas</label>
+                            <input type="text" name="nama_tugas" class="input input-bordered w-full focus:input-primary" placeholder="Contoh: Ulangan Harian Bab 1" required />
+                        </div>
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700">Target Kelas</label>
+                            <select name="id_kelas" id="select-kelas-tugas" class="select select-bordered w-full focus:select-primary" required>
+                                <option value="" disabled selected>-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700">Jenis Tugas</label>
+                            <div class="grid grid-cols-2 bg-gray-100 rounded-lg p-1 relative">
+                                <label class="cursor-pointer text-center py-2 rounded-md transition-all duration-200 font-semibold text-sm relative z-10 has-[:checked]:bg-white has-[:checked]:text-primary has-[:checked]:shadow-sm text-gray-500 hover:text-gray-700">
+                                    <input type="radio" name="jenis_tugas" value="upload" class="hidden" checked onchange="toggleTaskType('upload')">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-upload"></i> Upload File
+                                    </span>
+                                </label>
+
+                                <label class="cursor-pointer text-center py-2 rounded-md transition-all duration-200 font-semibold text-sm relative z-10 has-[:checked]:bg-white has-[:checked]:text-primary has-[:checked]:shadow-sm text-gray-500 hover:text-gray-700">
+                                    <input type="radio" name="jenis_tugas" value="quiz" class="hidden" onchange="toggleTaskType('quiz')">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-list-ol"></i> Quiz Pilgan
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700">Deadline Pengumpulan</label>
+                            <input type="datetime-local" name="deadline" class="input input-bordered w-full focus:input-primary" required />
+                        </div>
+                    </div>
+
+                    <div class="divider my-2"></div>
+
+                    <div id="section-upload" class="animate-fade-in">
+                        <div class="alert bg-blue-50 border-blue-100 text-blue-800 text-sm mb-4 shadow-sm">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Siswa akan mengunggah file jawaban (PDF/Gambar).</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 gap-5">
+                            <div class="form-control">
+                                <label class="label font-bold text-gray-700">Deskripsi / Instruksi</label>
+                                <textarea name="deskripsi" id="input-deskripsi" class="textarea textarea-bordered h-24 focus:textarea-primary" placeholder="Tuliskan instruksi pengerjaan soal..."></textarea>
+                            </div>
+                            <div class="form-control">
+                                <label class="label font-bold text-gray-700">Lampiran Soal (Opsional)</label>
+                                <input type="file" name="file_soal" id="input-file-soal" accept=".pdf,.jpg,.jpeg,.png" class="file-input file-input-bordered w-full" />
+                                <label class="label">
+                                    <span class="label-text-alt text-gray-400">*Format: PDF, JPG, PNG (Max 2MB)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="section-quiz" class="hidden animate-fade-in space-y-4">
+                        <div class="alert bg-yellow-50 border-yellow-100 text-yellow-800 text-sm shadow-sm flex flex-col sm:flex-row gap-2">
+                            <i class="fa-solid fa-file-csv text-lg"></i>
+                            <div class="flex-1">
+                                <span class="font-bold">Mode Quiz Pilihan Ganda</span>
+                                <p class="text-xs mt-1">Sistem akan otomatis mengoreksi jawaban siswa. Silakan upload soal via CSV.</p>
+                            </div>
+                            <a href="#" onclick="downloadQuizTemplate(event)" class="btn btn-xs btn-outline btn-warning bg-white">
+                                <i class="fa-solid fa-download"></i> Template
+                            </a>
+                        </div>
+
+                        <div class="form-control w-full">
+                            <label class="label font-bold text-gray-700">Upload CSV Soal</label>
+                            <input type="file" id="file-quiz-csv" accept=".csv" class="file-input file-input-bordered file-input-primary w-full" />
+                        </div>
+
+                        <div id="quiz-preview" class="hidden mt-4">
+                            <p class="font-bold text-sm text-gray-600 mb-2">Preview Soal (5 Baris Pertama):</p>
+                            <div class="overflow-x-auto border rounded-lg max-h-48">
+                                <table class="table table-xs table-pin-rows bg-base-100">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th>No</th>
+                                            <th>Pertanyaan</th>
+                                            <th class="text-center">Kunci</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="quiz-preview-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 shrink-0">
+                <button type="button" class="btn btn-ghost text-gray-500" onclick="document.getElementById('modal_create_task').close()">Batal</button>
+                <button type="submit" form="form-create-task" id="btn-submit-task" class="btn btn-primary text-white shadow-md">
+                    <i class="fa-solid fa-paper-plane"></i> Simpan & Bagikan
+                </button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+</DashboardLayout>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .overflow-x-auto::-webkit-scrollbar { height: 6px; }
+    .overflow-x-auto::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .overflow-x-auto::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+</style>
+
+<script src="../../../scripts/pages/guru/data-kelas.js"></script>

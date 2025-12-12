@@ -1,0 +1,198 @@
+---
+// src/pages/guru/kelas/[id].astro
+export const prerender = false; 
+
+import Layout from '../../../layouts/Layout.astro';
+import Navbar from '../../../components/ui/Navbar.astro';
+import ModalForm from '../../../components/ui/ModalForm.astro';
+import ToastSystem from '../../../components/ui/ToastSystem.astro';
+import AlertSystem from '../../../components/ui/AlertSystem.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import TableControls from '../../../components/ui/TableControls.astro';
+import FloatingMenu from '../../../components/ui/FloatingMenu.astro';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/guru');
+---
+
+<Layout title="Kelola Kelas">
+    <ToastSystem />
+    <AlertSystem />
+    <Navbar />
+
+    
+    <main id="main-content" data-class-id={id} class="container mx-auto px-4 py-8 max-w-7xl pb-32 lg:pb-8">
+        
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+            <div class="flex items-center gap-4">
+                <a href="/guru" class="btn btn-circle btn-ghost btn-sm border border-gray-300 hover:bg-gray-100">
+                    <i class="fa-solid fa-arrow-left text-gray-600"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chalkboard text-primary"></i>
+                        <span id="class-name-title" class="skeleton w-48 h-8 rounded block"></span>
+                    </h1>
+                    <p class="text-sm text-gray-500">Manajemen Siswa & Nilai</p>
+                </div>
+            </div>
+
+            <div class="hidden lg:flex flex-wrap gap-2">
+                <button onclick="document.getElementById('modal_import_csv').showModal()" class="btn btn-success text-white btn-sm">
+                    <i class="fa-solid fa-file-csv"></i> Import CSV
+                </button>
+                <button onclick="document.getElementById('modal_tambah_siswa').showModal()" class="btn btn-primary text-white btn-sm">
+                    <i class="fa-solid fa-user-plus"></i> Tambah Siswa
+                </button>
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-download"></i> Ekspor
+                    </div>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a onclick="exportToExcel()"><i class="fa-solid fa-file-excel text-green-600"></i> Excel</a></li>
+                        <li><a onclick="exportToPDF()"><i class="fa-solid fa-file-pdf text-red-600"></i> PDF</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4">
+            <TableControls />
+            
+            <button id="btn-bulk-delete" class="hidden btn btn-error text-white btn-sm animate-fade-in">
+                <i class="fa-solid fa-trash"></i> Hapus (<span id="selected-count">0</span>) Data
+            </button>
+        </div>
+
+        <div class="bg-base-100 shadow-xl rounded-xl border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto min-h-[300px]">
+                <table class="table table-zebra w-full">
+                    <thead class="bg-gray-50 text-gray-600 font-bold uppercase text-xs">
+                        <tr>
+                            <th class="w-10">
+                                <label>
+                                    <input type="checkbox" id="check-all" class="checkbox checkbox-sm rounded-md" />
+                                </label>
+                            </th>
+                            <th class="py-4">No</th>
+                            <th>NISN</th>
+                            <th>Nama Lengkap</th>
+                            <th class="text-center">Rata-rata Tugas</th>
+                            <th class="text-center">UTS</th>
+                            <th class="text-center">UAS</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body">
+                        {[1,2,3].map(() => (
+                            <tr class="animate-pulse">
+                                <td><div class="checkbox checkbox-sm disabled"></div></td>
+                                <td><div class="h-4 bg-gray-200 rounded w-8"></div></td>
+                                <td><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                <td colspan="5"><div class="h-4 bg-gray-200 rounded w-full"></div></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                
+                <div id="empty-state-siswa" class="hidden flex-col items-center justify-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                         <i class="fa-solid fa-user-xmark text-2xl text-gray-300"></i>
+                    </div>
+                    <p class="text-gray-500 font-medium">Data tidak ditemukan.</p>
+                </div>
+            </div>
+            <Pagination />
+        </div>
+    </main>
+
+    <FloatingMenu>
+        <button onclick="document.getElementById('modal_import_csv').showModal()" style="--tx: -80px; --ty: 10px;" 
+            class="btn btn-circle btn-success text-white shadow-lg border-2 border-white tooltip tooltip-left" data-tip="Import">
+            <i class="fa-solid fa-file-csv text-lg"></i>
+        </button>
+
+        <button onclick="document.getElementById('modal_tambah_siswa').showModal()" style="--tx: -55px; --ty: -55px;" 
+            class="btn btn-circle btn-primary text-white shadow-lg border-2 border-white tooltip tooltip-top" data-tip="Tambah">
+            <i class="fa-solid fa-user-plus text-lg"></i>
+        </button>
+
+        <div class="dropdown dropdown-top dropdown-end" style="--tx: 55px; --ty: -55px;">
+            <div tabindex="0" role="button" class="btn btn-circle btn-info text-white shadow-lg border-2 border-white">
+                <i class="fa-solid fa-download text-lg"></i>
+            </div>
+            <ul tabindex="0" class="dropdown-content z-[100] menu p-2 shadow bg-base-100 rounded-box w-32 mb-2 mr-[-50px]">
+                <li><a onclick="exportToExcel()">Excel</a></li>
+                <li><a onclick="exportToPDF()">PDF</a></li>
+            </ul>
+        </div>
+
+        <button onclick="showToast('Segera Hadir', 'info')" style="--tx: 80px; --ty: 10px;" 
+            class="btn btn-circle btn-warning text-white shadow-lg border-2 border-white tooltip tooltip-right" data-tip="AI">
+            <i class="fa-solid fa-brain text-lg"></i>
+        </button>
+    </FloatingMenu>
+
+    <dialog id="modal_import_csv" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box w-full sm:w-11/12 sm:max-w-4xl">
+            <h3 class="font-bold text-lg text-primary mb-4"><i class="fa-solid fa-file-csv"></i> Import Data Siswa</h3>
+            
+            <div class="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text">Pilih File CSV</span>
+                        <a href="#" id="btn-download-template" class="label-text-alt text-primary hover:underline link">Download Template</a>
+                    </label>
+                    <input type="file" id="file-csv-input" accept=".csv" class="file-input file-input-bordered file-input-primary w-full" />
+                </div>
+            </div>
+
+            <div id="preview-container" class="hidden">
+                <h4 class="font-bold text-sm mb-2">Preview Data:</h4>
+                <div class="overflow-x-auto max-h-60 border rounded-lg mb-4">
+                    <table class="table table-xs table-pin-rows">
+                        <thead><tr><th>Sts</th><th>Nama</th><th>NISN</th><th>Ket</th></tr></thead>
+                        <tbody id="preview-body"></tbody>
+                    </table>
+                </div>
+                <div class="alert shadow-sm text-sm p-2 mb-4">
+                    <i class="fa-solid fa-info-circle text-info"></i><span>Hanya data <b class="text-success">Valid</b> yang diproses.</span>
+                </div>
+            </div>
+
+            <div class="modal-action">
+                <form method="dialog"><button class="btn btn-ghost" onclick="resetPreview()">Batal</button></form>
+                <button id="btn-process-upload" class="btn btn-primary text-white" disabled>
+                    <i class="fa-solid fa-upload"></i> Proses Upload
+                </button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button onclick="resetPreview()">close</button></form>
+    </dialog>
+
+    <ModalForm id="modal_tambah_siswa" title="Tambah Siswa Manual" submitLabel="Simpan Siswa">
+        <div class="form-control">
+            <label class="label">Nama Lengkap</label>
+            <input type="text" name="nama" class="input input-bordered" required />
+        </div>
+        <div class="form-control">
+            <label class="label">NISN</label>
+            <input type="number" name="nisn" class="input input-bordered" required minlength="10" maxlength="10" />
+        </div>
+    </ModalForm>
+
+    <ModalForm id="modal_edit_siswa" title="Edit Data Siswa" submitLabel="Update Data">
+        <input type="hidden" name="studentId" id="edit-student-id">
+        <div class="form-control">
+            <label class="label">Nama Lengkap</label>
+            <input type="text" name="nama" id="edit-nama" class="input input-bordered" required />
+        </div>
+        <div class="form-control">
+            <label class="label">NISN</label>
+            <input type="number" name="nisn" id="edit-nisn" class="input input-bordered" required />
+        </div>
+    </ModalForm>
+
+</Layout>
+
+<script src="../../../scripts/pages/guru/kelas-detail.js"></script>

@@ -1,0 +1,28 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  submitLabel?: string;
+}
+
+const { id, title, submitLabel = "Simpan" } = Astro.props;
+---
+
+<dialog id={id} class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg mb-4 text-primary">{title}</h3>
+    
+    <form method="dialog" class="flex flex-col gap-4">
+      <slot />
+
+      <div class="modal-action">
+        <button class="btn btn-ghost" type="button" onclick={`${id}.close()`}>Batal</button>
+        <!-- Warna Hijau Emerald -->
+        <button class="btn btn-primary text-white" type="submit">{submitLabel}</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>

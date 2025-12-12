@@ -1,0 +1,94 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import ModalForm from '../../components/ui/ModalForm.astro';
+---
+
+<DashboardLayout title="Dashboard Guru">
+    
+    
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        <div class="stat bg-base-100 shadow-md rounded-xl border-l-4 border-primary relative overflow-hidden group">
+            <div class="stat-figure text-primary absolute right-4 top-4 opacity-20 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-chalkboard-user text-5xl"></i>
+            </div>
+            <div class="stat-title font-medium text-gray-500">Total Kelas</div>
+            <div class="stat-value text-primary text-4xl mt-1" id="stat-total-kelas"><span class="loading loading-spinner loading-sm"></span></div>
+            <div class="stat-desc mt-2">Kelas aktif yang anda ajar</div>
+        </div>
+
+        <div class="stat bg-base-100 shadow-md rounded-xl border-l-4 border-secondary relative overflow-hidden group">
+            <div class="stat-figure text-secondary absolute right-4 top-4 opacity-20 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-users text-5xl"></i>
+            </div>
+            <div class="stat-title font-medium text-gray-500">Total Siswa</div>
+            <div class="stat-value text-secondary text-4xl mt-1" id="stat-total-siswa"><span class="loading loading-spinner loading-sm"></span></div>
+            <div class="stat-desc mt-2">Akumulasi dari semua kelas</div>
+        </div>
+
+        <div class="stat bg-base-100 shadow-md rounded-xl border-l-4 border-warning relative overflow-hidden group md:col-span-2 xl:col-span-1">
+            <div class="stat-figure text-warning absolute right-4 top-4 opacity-20 group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-circle-exclamation text-5xl"></i>
+            </div>
+            <div class="stat-title font-medium text-gray-500">Perlu Perhatian</div>
+            <div class="stat-value text-warning text-4xl mt-1" id="stat-incomplete"><span class="loading loading-spinner loading-sm"></span></div>
+            <div class="stat-desc mt-2">Siswa belum memiliki nilai lengkap</div>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        <div class="flex items-center gap-4 w-full lg:w-auto">
+            <h2 class="text-2xl font-bold text-gray-800 border-l-4 border-primary pl-3">Daftar Kelas</h2>
+            <button id="btn-tambah-kelas-desktop" class="hidden lg:flex btn btn-primary text-white btn-sm gap-2 shadow-lg hover:shadow-xl transition-all">
+                <i class="fa-solid fa-plus"></i> Tambah Kelas
+            </button>
+        </div>
+        
+        <div class="relative w-full lg:w-80">
+            <input type="text" id="search-input" placeholder="Cari nama kelas..." class="input input-bordered w-full pl-10 focus:input-primary transition-all bg-white" />
+            <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
+        </div>
+    </div>
+
+    <div id="class-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24 lg:pb-0">
+        {[1, 2, 3].map(() => (
+            <div class="card bg-base-100 shadow-lg h-64 animate-pulse">
+                <div class="card-body">
+                    <div class="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
+                    <div class="space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-full"></div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                    </div>
+                </div>
+            </div>
+        ))}
+    </div>
+
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
+        <div class="bg-base-200 p-6 rounded-full mb-4 opacity-50">
+            <i class="fa-solid fa-chalkboard text-5xl text-gray-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-700">Tidak Ada Kelas</h3>
+        <p class="text-gray-500 max-w-sm">
+            Belum ada data kelas yang ditampilkan. Silakan buat kelas baru.
+        </p>
+    </div>
+
+    <ModalForm id="modal_tambah_kelas" title="Buat Kelas Baru" submitLabel="Simpan Kelas">
+        <div class="form-control">
+            <label class="label font-semibold">Nama Kelas</label>
+            <input type="text" name="nama_kelas" placeholder="Contoh: X RPL 1" class="input input-bordered w-full focus:input-primary" required />
+        </div>
+        <div class="form-control">
+            <label class="label font-semibold">Tahun Ajaran</label>
+            <select name="tahun_ajaran" class="select select-bordered w-full focus:select-primary">
+                <option value="2023/2024">2023/2024</option>
+                <option value="2024/2025" selected>2024/2025</option>
+                <option value="2025/2026">2025/2026</option>
+            </select>
+        </div>
+    </ModalForm>
+
+</DashboardLayout>
+
+<script src="../../scripts/pages/guru/dashboard.js"></script>

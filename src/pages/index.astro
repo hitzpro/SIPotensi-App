@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LoginForm from '../components/auth/LoginForm.astro';
+---
+
+<Layout title="Login Sistem Akademik">
+  <main class="min-h-screen flex flex-col items-center justify-center bg-base-200 relative overflow-hidden">
+    
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary/20 rounded-full blur-3xl"></div>
+
+    <div class="z-10 w-full flex justify-center px-4">
+      <LoginForm />
+    </div>
+
+
+  </main>
+</Layout>

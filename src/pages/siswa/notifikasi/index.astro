@@ -1,0 +1,53 @@
+---
+// src/pages/siswa/notifikasi/index.astro
+import StudentLayout from '../../../layouts/StudentLayout.astro';
+import AlertSystem from '../../../components/ui/AlertSystem.astro';
+import ToastSystem from '../../../components/ui/ToastSystem.astro';
+---
+
+<StudentLayout title="Notifikasi">
+    <AlertSystem />
+    <ToastSystem />
+
+    <div class="fixed top-0 inset-x-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 max-w-md mx-auto w-full flex justify-between items-center shadow-sm">
+        <a href="/siswa" class="btn btn-circle btn-sm btn-ghost hover:bg-gray-100">
+            <i class="fa-solid fa-arrow-left text-gray-600"></i>
+        </a>
+        <h1 class="text-lg font-bold text-gray-800">Notifikasi</h1>
+        
+        <div class="form-control">
+            <label class="label cursor-pointer gap-2">
+                <span class="label-text text-xs text-gray-500 font-semibold" id="notif-label">Checking...</span> 
+                <input type="checkbox" id="toggle-push" class="toggle toggle-primary toggle-sm" />
+            </label>
+        </div>
+    </div>
+
+    <div class="pt-20 pb-10 px-4 max-w-md mx-auto min-h-screen bg-gray-50">
+        
+        <div class="flex justify-end mb-4">
+            <button id="btnMarkAll" class="btn btn-ghost btn-xs text-primary font-medium hover:bg-emerald-50" disabled>
+                <i class="fa-solid fa-check-double mr-1"></i> Baca Semua
+            </button>
+        </div>
+
+        <div id="loadingState" class="flex flex-col items-center justify-center py-10 space-y-3">
+            <span class="loading loading-spinner loading-md text-primary"></span>
+            <span class="text-xs text-gray-400 animate-pulse">Memuat notifikasi...</span>
+        </div>
+
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-regular fa-bell-slash text-3xl text-gray-300"></i>
+            </div>
+            <h3 class="text-gray-800 font-bold">Tidak ada notifikasi</h3>
+            <p class="text-xs text-gray-400 mt-1">Kamu sudah up-to-date!</p>
+        </div>
+
+        <div id="notificationList" class="space-y-3 hidden">
+            </div>
+    </div>
+
+</StudentLayout>
+
+<script src="../../../scripts/pages/siswa/notifikasi.js"></script>

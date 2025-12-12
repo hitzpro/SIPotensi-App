@@ -1,0 +1,47 @@
+<div class="toast toast-top toast-end z-[100]" id="toast-container">
+    <!-- Toast items akan disuntikkan di sini oleh JS -->
+  </div>
+  
+  <script is:inline>
+    // Fungsi Global untuk memanggil toast
+    // Cara pakai: showToast('Data berhasil disimpan!', 'success')
+    window.showToast = (message, type = 'success') => {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      // Mapping tipe ke class DaisyUI
+      let alertClass = 'alert-info';
+      let icon = '<i class="fa-solid fa-info-circle"></i>';
+  
+      if (type === 'success') {
+        alertClass = 'alert-success text-white';
+        icon = '<i class="fa-solid fa-check-circle"></i>';
+      } else if (type === 'warning') {
+        alertClass = 'alert-warning text-white';
+        icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
+      } else if (type === 'danger' || type === 'error') {
+        alertClass = 'alert-error text-white';
+        icon = '<i class="fa-solid fa-times-circle"></i>';
+      }
+  
+      toast.className = `alert ${alertClass} shadow-lg mb-2 transition-all duration-300 transform translate-x-full`;
+      toast.innerHTML = `
+        <span>${icon} ${message}</span>
+      `;
+  
+      container.appendChild(toast);
+  
+      // Animasi masuk
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-full');
+      });
+  
+      // Hilangkan otomatis setelah 3 detik
+      setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    };
+  </script>

@@ -1,0 +1,127 @@
+---
+// src/pages/siswa/tugas/[id].astro
+export const prerender = false;
+import StudentLayout from '../../../layouts/StudentLayout.astro';
+import AlertSystem from '../../../components/ui/AlertSystem.astro';
+import Toast from '../../../components/ui/ToastSystem.astro';
+
+const { id } = Astro.params;
+---
+
+<StudentLayout title="Detail Tugas">
+    
+    <div class="fixed top-0 inset-x-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 max-w-md mx-auto w-full flex items-center gap-3 shadow-sm">
+        <button id="btnBack" class="btn btn-circle btn-sm btn-ghost hover:bg-gray-100">
+            <i class="fa-solid fa-arrow-left text-gray-600"></i>
+        </button>
+        <h1 class="text-lg font-bold text-gray-800 truncate flex-1" id="headerTitle">Memuat...</h1>
+    </div>
+
+    <div class="pt-20 pb-24 px-5 max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col gap-6 relative">
+
+        <div id="loadingState" class="flex flex-col items-center justify-center py-20">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+        </div>
+
+        <div id="detailSection" class="hidden flex-col gap-4">
+            <div class="card bg-white shadow-sm border border-gray-100 rounded-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-100">
+                     <div class="flex justify-between items-start">
+                        <div class="badge badge-primary badge-outline text-xs font-bold" id="taskTypeBadge">TUGAS</div>
+                        <div class="text-xs text-gray-500 font-mono bg-white px-2 py-1 rounded border border-gray-200" id="taskDeadline"></div>
+                     </div>
+                     <h2 class="text-xl font-bold text-gray-800 mt-2 leading-tight" id="taskTitle"></h2>
+                </div>
+                <div class="p-5 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap" id="taskDesc"></div>
+            </div>
+
+            <div id="actionContainer" class="mt-2">
+                <button id="btnStart" class="btn btn-primary w-full shadow-lg shadow-blue-200 transition-all">
+                    <i class="fa-solid fa-play"></i> Mulai Mengerjakan
+                </button>
+                
+                <div id="deadlineAlert" class="hidden alert alert-error shadow-sm text-white text-sm">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Maaf, batas waktu pengerjaan sudah habis.</span>
+                </div>
+            </div>
+
+            <div id="historySection" class="hidden card bg-white border border-emerald-100 shadow-sm rounded-2xl overflow-hidden mt-2">
+                <div class="bg-emerald-50 p-3 border-b border-emerald-100 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                    <span class="font-bold text-emerald-800 text-sm">Status: Selesai</span>
+                </div>
+                <div class="p-4 flex flex-col gap-3">
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span class="text-xs text-gray-500">Tanggal Kumpul</span>
+                        <span class="text-xs font-bold text-gray-700" id="historyDate">-</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span class="text-xs text-gray-500">Nilai</span>
+                        <span class="text-lg font-bold text-primary" id="historyScore">-</span>
+                    </div>
+                    <div id="uploadFeedback" class="hidden text-xs text-gray-400 italic text-center mt-1">
+                        File tugas Anda telah tersimpan di server.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="quizSection" class="hidden flex-col gap-6 animate-fade-in">
+            <div class="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100 sticky top-16 z-20">
+                <span class="text-xs font-bold text-gray-400">Progress</span>
+                <span class="text-sm font-bold text-primary" id="quizProgress">0 / 0</span>
+            </div>
+            <div id="questionsContainer" class="flex flex-col gap-8 pb-20"></div>
+            <div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 p-4 max-w-md mx-auto flex justify-between items-center z-30">
+                 <span class="text-xs text-gray-400 italic">Pastikan semua terjawab</span>
+                 <button id="btnSubmitQuiz" class="btn btn-success text-white shadow-md">
+                    Selesai & Kumpulkan <i class="fa-solid fa-paper-plane ml-1"></i>
+                 </button>
+            </div>
+        </div>
+
+        <div id="uploadSection" class="hidden flex-col gap-6 animate-fade-in">
+            <div class="alert alert-info shadow-sm text-xs">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Silakan kerjakan tugas sesuai instruksi, lalu upload file hasilnya di bawah ini.</span>
+            </div>
+            <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-2xl bg-white p-8 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-gray-50 cursor-pointer text-center relative">
+                <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mb-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-700">Upload File Tugas</h3>
+                <p class="text-xs text-gray-400 max-w-[200px]">PDF, DOCX, JPG, PNG (Max 5MB)</p>
+            </div>
+            <div id="filePreview" class="hidden p-4 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 shrink-0">
+                        <i class="fa-regular fa-file"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-800 truncate" id="fileName">-</p>
+                        <p class="text-xs text-gray-400" id="fileSize">-</p>
+                    </div>
+                </div>
+                <button id="btnRemoveFile" class="btn btn-square btn-ghost btn-xs text-error"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <button id="btnSubmitUpload" class="btn btn-primary w-full shadow-lg disabled:opacity-50" disabled>
+                Kirim Tugas <i class="fa-solid fa-paper-plane ml-1"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <AlertSystem />
+    <Toast />
+    <input type="hidden" id="taskId" value={id} />
+
+</StudentLayout>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script src="../../../scripts/pages/siswa/tugas-detail.js"></script>

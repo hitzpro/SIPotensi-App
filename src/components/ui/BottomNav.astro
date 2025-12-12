@@ -1,0 +1,72 @@
+---
+const currentPath = Astro.url.pathname;
+
+// Helper active state
+const isActive = (path: string) => {
+    // Normalisasi path agar tidak sensitif trailing slash
+    const cleanPath = currentPath.replace(/\/$/, "");
+    const cleanTarget = path.replace(/\/$/, "");
+    
+    if (cleanTarget === '/guru' && cleanPath === '/guru') return true;
+    if (cleanTarget !== '/guru' && cleanPath.includes(cleanTarget)) return true;
+    return false;
+};
+
+// Cek apakah ini halaman Home Dashboard (/guru)
+// Kita pakai replace untuk menghapus slash di akhir jika ada (misal /guru/ jadi /guru)
+const isHome = currentPath.replace(/\/$/, "") === '/guru';
+---
+
+<div class="fixed bottom-6 left-0 right-0 px-4 lg:hidden z-50">
+    <div class="bg-base-100/95 backdrop-blur-md text-gray-500 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] h-16 border border-gray-200 flex items-center justify-between px-2 relative">
+        
+        <div class={`grid ${isHome ? 'grid-cols-5' : 'grid-cols-4'} w-full h-full items-center`}>
+
+            <a href="/guru" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('/guru') ? 'bg-primary/10 text-primary translate-y-0' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-home text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('/guru') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+                    Home
+                </span>
+            </a>
+
+            <a href="/guru/data-kelas" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('data-kelas') ? 'bg-primary/10 text-primary' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-users text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('data-kelas') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+                    Kelas
+                </span>
+            </a>
+
+            {isHome && (
+                <div class="col-span-1 relative h-full group">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                        <button onclick="modal_tambah_kelas.showModal()" class="btn btn-circle btn-primary btn-lg border-[6px] border-base-200 shadow-xl text-white hover:scale-110 hover:-translate-y-1 transition-all duration-300">
+                            <i class="fa-solid fa-plus text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <a href="/guru/analisis-ai" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('analisis-ai') ? 'bg-primary/10 text-primary' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-robot text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('analisis-ai') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+                    Analisis
+                </span>
+            </a>
+
+
+            <button onclick="handleSidebarLogout()" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class="p-1.5 text-gray-400 group-hover:text-error group-hover:bg-red-50 rounded-xl transition-all">
+                    <i class="fa-solid fa-sign-out-alt text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium opacity-0 h-0 overflow-hidden">Keluar</span>
+            </button>
+            
+        </div>
+    </div>
+</div>

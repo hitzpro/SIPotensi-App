@@ -1,0 +1,109 @@
+---
+// src/components/ui/FloatingMenu.astro
+---
+
+<!-- BACKDROP OVERLAY (Gradient Shadow) -->
+<!-- Muncul hanya saat menu terbuka untuk memberi fokus -->
+<div id="fab-overlay" 
+     class="fixed inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-40 hidden transition-opacity duration-300 lg:hidden"
+     onclick="toggleFab()">
+</div>
+
+<!-- CONTAINER FAB -->
+<div class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 lg:hidden flex flex-col items-center justify-end">
+    
+    <!-- CONTAINER ITEM TOMBOL (Relative terhadap parent) -->
+    <div id="fab-items-container" class="relative w-16 h-16 flex items-center justify-center pointer-events-none">
+        
+        <!-- Slot untuk tombol-tombol aksi -->
+        <!-- Kita akan memanipulasi posisi anak-anak slot ini menggunakan CSS selector -->
+        <slot /> 
+
+    </div>
+
+    <!-- TOMBOL UTAMA (TRIGGER) -->
+    <button id="fab-trigger" onclick="toggleFab()" 
+            class="btn btn-circle btn-lg btn-primary text-white shadow-2xl relative z-50 transition-transform duration-300">
+        <i class="fa-solid fa-bars text-xl transition-all duration-300" id="fab-icon"></i>
+    </button>
+</div>
+
+<style is:global>
+    /* Base style untuk item tombol di dalam slot */
+    #fab-items-container > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek Bouncy */
+        pointer-events: none; /* Supaya tidak bisa diklik saat tertutup */
+        z-index: 45;
+    }
+
+    /* KETIKA MENU TERBUKA (.fab-active) */
+    
+    /* 1. Tombol Utama Berputar & Ganti Icon */
+    .fab-active #fab-trigger {
+        transform: rotate(180deg);
+        background-color: #ef4444; /* Jadi warna merah */
+        border-color: #ef4444;
+    }
+    .fab-active #fab-icon::before {
+        content: "\f00d"; /* Kode icon fa-xmark (silang) */
+    }
+
+    /* 2. Posisi Fan-Out Item Tombol */
+    .fab-active #fab-items-container > * {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: auto;
+    }
+
+    /* POSISI SPESIFIK ITEM (Urutan sesuai Slot) */
+    
+    /* Item 1: Kiri Parent */
+    .fab-active #fab-items-container > *:nth-child(1) {
+        transform: translate(-85px, 50px);
+    }
+
+    /* Item 2: Atas Kiri */
+    .fab-active #fab-items-container > *:nth-child(2) {
+        transform: translate(-45px, -23px);
+    }
+
+    /* Item 3: Atas Kanan */
+    .fab-active #fab-items-container > *:nth-child(3) {
+        transform: translate(60px, -15px);
+    }
+
+    /* Item 4: Kanan Parent */
+    .fab-active #fab-items-container > *:nth-child(4) {
+        transform: translate(85px, 50px);
+    }
+
+</style>
+
+<script is:inline>
+    function toggleFab() {
+        const overlay = document.getElementById('fab-overlay');
+        const triggerBtn = document.getElementById('fab-trigger');
+        const container = triggerBtn.parentElement;
+
+        // Toggle Class Active
+        container.classList.toggle('fab-active');
+
+        // Toggle Overlay Visibility
+        if (container.classList.contains('fab-active')) {
+            overlay.classList.remove('hidden');
+            // Sedikit delay biar transisi opacity jalan
+            setTimeout(() => overlay.classList.add('opacity-100'), 10);
+        } else {
+            overlay.classList.remove('opacity-100');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    }
+</script>
