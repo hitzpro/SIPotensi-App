@@ -25,18 +25,34 @@ async function loadNotifications() {
         const res = await getData('/notifications');
         els.loading.classList.add('hidden');
         
-        if(res.ok && res.data.data.length > 0) {
-            renderList(res.data.data);
-            els.list.classList.remove('hidden');
-            // Enable button jika ada yang unread
-            if(res.data.unread_count > 0) els.btnMarkAll.disabled = false;
+        // Cek struktur respon baru: res.data.data.notifications
+        if(res.ok && res.data && res.data.data) {
+            
+            const { notifications, unread } = res.data.data;
+
+            if (notifications.length > 0) {
+                renderList(notifications);
+                els.list.classList.remove('hidden');
+                
+                // Enable button jika ada yang unread
+                if(unread > 0) els.btnMarkAll.disabled = false;
+            } else {
+                showEmptyState();
+            }
         } else {
-            els.empty.classList.remove('hidden');
-            els.empty.style.display = 'flex';
+            showEmptyState();
         }
     } catch (error) {
         console.error("Gagal memuat notifikasi:", error);
+        els.loading.classList.add('hidden');
+        showEmptyState();
     }
+}
+
+function showEmptyState() {
+    els.empty.classList.remove('hidden');
+    els.empty.style.display = 'flex';
+    els.list.classList.add('hidden');
 }
 
 function renderList(notifications) {

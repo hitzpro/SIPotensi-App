@@ -34,7 +34,9 @@ function checkAuth() {
     if (token && userString) {
         try {
             const user = JSON.parse(userString);
-            if (user.role === 'guru') window.location.href = '/guru';
+            // Tambahkan cek admin di sini
+            if (user.role === 'admin') window.location.href = '/admin'; 
+            else if (user.role === 'guru') window.location.href = '/guru';
             else if (user.role === 'siswa') window.location.href = '/siswa';
         } catch (e) {
             console.error("Session invalid", e);
@@ -105,11 +107,13 @@ async function handleLogin(e) {
             localStorage.setItem('token', result.data.token);
             localStorage.setItem('user', JSON.stringify(result.data.user));
 
-            // Redirect berdasarkan role dari server (lebih aman)
-            const userRole = result.data.user.role || role;
+            // Redirect berdasarkan role dari server
+            // result.data.user.role didapat dari backend (admin/guru/siswa)
+            const userRole = result.data.user.role;
 
             setTimeout(() => {
-                if (userRole === 'guru') window.location.href = '/guru';
+                if (userRole === 'admin') window.location.href = '/admin'; // TAMBAHAN INI
+                else if (userRole === 'guru') window.location.href = '/guru';
                 else if (userRole === 'siswa') window.location.href = '/siswa';
                 else window.location.href = '/';
             }, 1000);

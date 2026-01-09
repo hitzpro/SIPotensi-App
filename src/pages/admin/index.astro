@@ -1,0 +1,88 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Dashboard Admin">
+  
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
+    <p class="text-gray-500 mt-1">Selamat datang kembali, Administrator.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+          <h2 class="card-title text-gray-500 text-sm">Total Guru Aktif</h2>
+          <p class="text-4xl font-extrabold text-primary mt-2" id="stat-guru">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <i class="fa-solid fa-chalkboard-user text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+          <h2 class="card-title text-gray-500 text-sm">Total Siswa</h2>
+          <p class="text-4xl font-extrabold text-secondary mt-2" id="stat-siswa">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+          <i class="fa-solid fa-user-graduate text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+          <h2 class="card-title text-gray-500 text-sm">Total Kelas</h2>
+          <p class="text-4xl font-extrabold text-accent mt-2" id="stat-kelas">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+          <i class="fa-solid fa-school text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="hero bg-base-100 rounded-2xl border border-gray-200 p-8">
+    <div class="hero-content text-center">
+      <div class="max-w-md">
+        <h1 class="text-2xl font-bold">Mulai Kelola Data</h1>
+        <p class="py-6">Silakan pilih menu di sidebar untuk mengelola data Guru atau mengirimkan dokumen.</p>
+        <a href="/admin/guru" class="btn btn-primary text-white">Ke Manajemen Guru</a>
+      </div>
+    </div>
+  </div>
+
+</AdminLayout>
+
+<script>
+  // Import helper getData yang benar
+  import { getData } from '../../scripts/utils/api.js';
+
+  async function loadDashboardStats() {
+      // Cek token sekilas (opsional karena getData juga ngecek, tapi buat UX redirect bagus)
+      const token = localStorage.getItem('token');
+      if(!token) window.location.href = '/';
+
+      // Panggil endpoint backend (pastikan route backend benar)
+      // Sesuai controller kamu: /api/admin/guru/stats
+      const result = await getData('/admin/guru/stats');
+
+      if(result.ok) {
+          // Update UI
+          document.getElementById('stat-guru').innerText = result.data.data.total_guru;
+          document.getElementById('stat-siswa').innerText = result.data.data.total_siswa;
+          document.getElementById('stat-kelas').innerText = result.data.data.total_kelas;
+      } else {
+          console.error("Gagal load stats:", result.data);
+      }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadDashboardStats);
+</script>

@@ -1,0 +1,348 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Alert from '../../../components/ui/Alert.astro';
+import FormInput from '../../../components/ui/FormInput.astro';
+---
+
+<AdminLayout title="Kirim Dokumen">
+    
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Kirim Dokumen</h1>
+        <p class="text-gray-500 text-sm">Upload file dan bagikan ke guru melalui notifikasi.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2">
+            <div class="card bg-white shadow-sm border border-gray-200">
+                <div class="card-body">
+                    <form id="form-broadcast" class="space-y-4">
+                        
+                        <div class="form-control w-full">
+                            <label class="label font-bold text-gray-700">File Dokumen</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors relative cursor-pointer group">
+                                <input type="file" id="file-input" name="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
+                                <div class="flex flex-col items-center gap-2" id="file-preview-area">
+                                    <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-600">Klik atau tarik file ke sini</span>
+                                    <span class="text-xs text-gray-400">PDF, CSV, Docx, Xlsx (Max 5MB)</span>
+                                </div>
+                                <div id="file-name-display" class="hidden flex-col items-center gap-1 animate-fade-in">
+                                    <i class="fa-solid fa-file-lines text-3xl text-primary"></i>
+                                    <span class="text-sm font-bold text-gray-800 mt-2" id="file-name-text">filename.pdf</span>
+                                    <span class="text-xs text-blue-600 hover:underline cursor-pointer">Ganti File</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <FormInput id="judul" name="judul" label="Judul Notifikasi" placeholder="Cth: Jadwal Ujian Semester" required={true} />
+                        
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700 text-xs uppercase">Pesan Tambahan</label>
+                            <textarea id="pesan" name="pesan" class="textarea textarea-bordered h-24" placeholder="Silakan unduh dokumen ini untuk keperluan..."></textarea>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700 text-xs uppercase">Penerima</label>
+                            <div class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                                <div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold text-gray-800" id="recipient-count">0 Guru Dipilih</p>
+                                    <p class="text-xs text-gray-500">Klik tombol di kanan untuk memilih</p>
+                                </div>
+                                <button type="button" onclick="openRecipientModal()" class="btn btn-sm btn-outline border-gray-300 hover:bg-gray-100 hover:text-gray-800">
+                                    Pilih Guru
+                                </button>
+                            </div>
+                            <input type="hidden" id="selected-ids" name="target_ids" value="[]">
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <button type="submit" id="btn-send" class="btn btn-primary w-full text-white gap-2" disabled>
+                            <i class="fa-solid fa-paper-plane"></i> Kirim Dokumen
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="alert alert-info shadow-sm text-sm">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>
+                    <h3 class="font-bold">Info Pengiriman</h3>
+                    <div class="text-xs">
+                        Dokumen yang dikirim akan muncul di menu notifikasi dashboard Guru.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="modal_recipient" class="modal">
+        <div class="modal-box w-full max-w-lg h-[80vh] flex flex-col p-0 overflow-hidden bg-white">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-lg text-gray-800">Pilih Penerima</h3>
+                <form method="dialog">
+                    <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+                </form>
+            </div>
+
+            <div class="p-4 border-b border-gray-200 space-y-3 bg-white">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="search-guru" placeholder="Cari nama guru..." class="input input-bordered input-sm w-full pl-9">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="label cursor-pointer gap-2 justify-start">
+                        <input type="checkbox" id="check-all" class="checkbox checkbox-sm checkbox-primary" />
+                        <span class="label-text font-bold text-gray-700">Pilih Semua</span>
+                    </label>
+                    <span class="text-xs text-gray-500 font-medium" id="total-guru-label">Total: 0</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-1 bg-white" id="list-guru-container">
+                <div class="text-center py-10 text-gray-400">
+                    <span class="loading loading-spinner"></span> Memuat data...
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
+                <form method="dialog">
+                    <button class="btn btn-ghost text-gray-600">Batal</button>
+                </form>
+                <button onclick="saveSelection()" class="btn btn-primary text-white shadow-md">
+                    Simpan (<span id="btn-count">0</span>)
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+</AdminLayout>
+
+<script>
+    import { getData } from '../../../scripts/utils/api.js';
+
+    // STATE
+    let allGurus = [];
+    let selectedSet = new Set();
+    let fileSelected = false;
+
+    // --- 1. INITIAL LOAD ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchGurus();
+        setupFileUpload();
+        setupSearch();
+    });
+
+    async function fetchGurus() {
+        const res = await getData('/admin/guru');
+        // PASTIKAN STRUKTUR RESPON SESUAI
+        if(res.ok && res.data && res.data.data) {
+            allGurus = res.data.data;
+            document.getElementById('total-guru-label').innerText = `Total: ${allGurus.length}`;
+            renderGuruList(allGurus); // Render awal (hidden di modal)
+        } else {
+            console.error("Gagal ambil data guru:", res);
+            document.getElementById('list-guru-container').innerHTML = `<div class="text-center py-4 text-error text-sm">Gagal memuat data.</div>`;
+        }
+    }
+
+    // --- 2. RENDER LIST ---
+    function renderGuruList(gurus) {
+        const container = document.getElementById('list-guru-container');
+        if(!container) return;
+
+        if(gurus.length === 0) {
+            container.innerHTML = `<div class="text-center py-4 text-gray-400 text-sm">Tidak ditemukan</div>`;
+            return;
+        }
+
+        container.innerHTML = gurus.map(g => `
+            <label class="flex items-center gap-3 p-3 hover:bg-base-200 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-200">
+                <input type="checkbox" value="${g.id}" class="checkbox checkbox-sm checkbox-primary guru-checkbox" 
+                    ${selectedSet.has(g.id) ? 'checked' : ''} onchange="toggleGuru('${g.id}')" />
+                
+                <div class="flex-1">
+                    <div class="font-bold text-gray-800 text-sm">${g.nama}</div>
+                    <div class="text-xs text-gray-500">${g.email}</div>
+                </div>
+                
+                ${g.mengajar && g.mengajar.length > 0 
+                    ? `<span class="badge badge-xs badge-ghost border-gray-300">${g.mengajar.length} Mapel</span>` 
+                    : ''}
+            </label>
+        `).join('');
+    }
+
+    // --- 3. MODAL LOGIC ---
+    window.openRecipientModal = () => {
+        // [FIX UTAMA] Reset input search saat modal dibuka agar list tidak "hilang"
+        const searchInput = document.getElementById('search-guru');
+        if(searchInput) searchInput.value = '';
+
+        // Render ulang data lengkap
+        renderGuruList(allGurus);
+        updateCheckAllState();
+        document.getElementById('modal_recipient').showModal();
+    }
+
+    window.toggleGuru = (id) => {
+        if(selectedSet.has(id)) selectedSet.delete(id);
+        else selectedSet.add(id);
+        
+        updateCheckAllState();
+        document.getElementById('btn-count').innerText = selectedSet.size;
+    }
+
+    // Check All Logic
+    document.getElementById('check-all')?.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        const visibleGurus = getVisibleGurus(); 
+
+        visibleGurus.forEach(g => {
+            if(isChecked) selectedSet.add(g.id);
+            else selectedSet.delete(g.id);
+        });
+
+        // Update UI checkbox satu-satu
+        document.querySelectorAll('.guru-checkbox').forEach(cb => {
+            // Hanya update yang terlihat agar sesuai filter
+            if(visibleGurus.some(g => g.id === cb.value)) {
+                cb.checked = isChecked;
+            }
+        });
+        
+        document.getElementById('btn-count').innerText = selectedSet.size;
+    });
+
+    function getVisibleGurus() {
+        const query = document.getElementById('search-guru').value.toLowerCase();
+        return allGurus.filter(g => g.nama.toLowerCase().includes(query) || g.email.toLowerCase().includes(query));
+    }
+
+    function updateCheckAllState() {
+        const visibleGurus = getVisibleGurus();
+        // Cek apakah SEMUA yang terlihat sudah dipilih
+        const allSelected = visibleGurus.length > 0 && visibleGurus.every(g => selectedSet.has(g.id));
+        document.getElementById('check-all').checked = allSelected;
+    }
+
+    // Live Search
+    function setupSearch() {
+        document.getElementById('search-guru').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allGurus.filter(g => g.nama.toLowerCase().includes(query) || g.email.toLowerCase().includes(query));
+            renderGuruList(filtered);
+            // Update state check-all sesuai hasil filter
+            updateCheckAllState();
+        });
+    }
+
+    window.saveSelection = () => {
+        document.getElementById('recipient-count').innerText = `${selectedSet.size} Guru Dipilih`;
+        document.getElementById('selected-ids').value = JSON.stringify(Array.from(selectedSet));
+        document.getElementById('modal_recipient').close();
+        validateForm();
+    }
+
+    // --- 4. FILE UPLOAD UI ---
+    function setupFileUpload() {
+        const input = document.getElementById('file-input');
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('file-preview-area').classList.add('hidden');
+                document.getElementById('file-name-display').classList.remove('hidden');
+                document.getElementById('file-name-display').classList.add('flex');
+                document.getElementById('file-name-text').innerText = file.name;
+                fileSelected = true;
+            } else {
+                fileSelected = false;
+            }
+            validateForm();
+        });
+    }
+
+    function validateForm() {
+        const btn = document.getElementById('btn-send');
+        // Tombol aktif jika file ada DAN minimal 1 guru dipilih
+        if(fileSelected && selectedSet.size > 0) {
+            btn.disabled = false;
+        } else {
+            btn.disabled = true;
+        }
+    }
+
+    // --- 5. SUBMIT ---
+    document.getElementById('form-broadcast').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const total = selectedSet.size;
+        // Panggil alert system global
+        const confirm = await window.showConfirm(
+            'Kirim Dokumen?', 
+            `Anda akan mengirim file kepada <b>${total} guru</b>.`,
+            'Ya, Kirim',
+            'primary'
+        );
+
+        if(!confirm) return;
+
+        const btn = document.getElementById('btn-send');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="loading loading-spinner"></span> Mengirim...`;
+
+        const formData = new FormData(e.target);
+        const token = localStorage.getItem('token');
+
+        try {
+            const response = await fetch('http://localhost:3000/api/admin/guru/broadcast-doc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if(response.ok) {
+                alert("Berhasil! " + result.message);
+                
+                // RESET FORM SETELAH BERHASIL
+                document.getElementById('form-broadcast').reset();
+                selectedSet.clear();
+                window.saveSelection(); 
+                
+                // Reset UI File
+                document.getElementById('file-preview-area').classList.remove('hidden');
+                document.getElementById('file-name-display').classList.add('hidden');
+                document.getElementById('file-name-display').classList.remove('flex');
+                fileSelected = false;
+                validateForm();
+
+            } else {
+                alert(result.message || "Gagal mengirim dokumen.");
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Terjadi kesalahan jaringan.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+</script>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

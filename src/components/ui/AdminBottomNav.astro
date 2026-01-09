@@ -1,0 +1,58 @@
+---
+const currentPath = Astro.url.pathname;
+const isGuruPage = currentPath.includes('/admin/guru');
+
+const isActive = (path) => {
+    if (path === '/admin' && (currentPath === '/admin' || currentPath === '/admin/')) return true;
+    if (path !== '/admin' && currentPath.includes(path)) return true;
+    return false;
+};
+---
+
+<div class="fixed bottom-6 left-0 right-0 px-4 lg:hidden z-50">
+    <div class="bg-base-100/95 backdrop-blur-md text-gray-500 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] h-16 border border-gray-200 flex items-center justify-between px-2 relative">
+        
+        <div class={`grid ${isGuruPage ? 'grid-cols-5' : 'grid-cols-4'} w-full h-full items-center`}>
+
+            <a href="/admin" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('/admin') ? 'bg-primary/10 text-primary' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-chart-pie text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('/admin') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>Home</span>
+            </a>
+
+            <a href="/admin/guru" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('/admin/guru') ? 'bg-primary/10 text-primary' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-users text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('/admin/guru') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>Guru</span>
+            </a>
+
+            {/* Tombol Plus Tengah (Muncul hanya di halaman guru untuk Add Guru) */}
+            {isGuruPage && (
+                <div class="col-span-1 relative h-full group">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                        <button onclick="openModalGuru()" class="btn btn-circle btn-primary btn-lg border-[6px] border-base-200 shadow-xl text-white hover:scale-110 hover:-translate-y-1 transition-all duration-300">
+                            <i class="fa-solid fa-plus text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <a href="/admin/dokumen" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class={`p-1.5 rounded-xl transition-all ${isActive('/admin/dokumen') ? 'bg-primary/10 text-primary' : 'text-gray-400 group-hover:text-primary'}`}>
+                    <i class="fa-solid fa-file-export text-xl"></i>
+                </div>
+                <span class={`text-[10px] font-medium transition-all ${isActive('/admin/dokumen') ? 'text-primary opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>Kirim</span>
+            </a>
+
+            <button onclick="handleSidebarLogout()" class="col-span-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
+                <div class="p-1.5 text-gray-400 group-hover:text-error group-hover:bg-red-50 rounded-xl transition-all">
+                    <i class="fa-solid fa-sign-out-alt text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium opacity-0 h-0 overflow-hidden">Keluar</span>
+            </button>
+            
+        </div>
+    </div>
+</div>

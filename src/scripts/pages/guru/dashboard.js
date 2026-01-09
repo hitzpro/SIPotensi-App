@@ -1,4 +1,4 @@
-import { getData, deleteData, postData } from '../../utils/api.js';
+import { getData } from '../../utils/api.js';
 
 // --- DOM ELEMENTS ---
 const els = {
@@ -10,11 +10,6 @@ const els = {
     statTotalKelas: document.getElementById('stat-total-kelas'),
     statTotalSiswa: document.getElementById('stat-total-siswa'),
     statIncomplete: document.getElementById('stat-incomplete'),
-    
-    // Forms & Buttons
-    formTambahKelas: document.querySelector('#modal_tambah_kelas form'),
-    modalTambahKelas: document.getElementById('modal_tambah_kelas'),
-    btnTambahDesktop: document.getElementById('btn-tambah-kelas-desktop')
 };
 
 // --- STATE ---
@@ -38,16 +33,26 @@ async function loadDashboardData() {
         }
 
         // 2. Load Class List
-        const classesRes = await getData('/classes');
+        // Menggunakan endpoint summary karena di controller summary juga mengembalikan daftar kelas
+        // Atau kamu bisa buat endpoint khusus list kelas, tapi logic summary tadi sudah mengambil list kelas.
+        // Agar konsisten, kita ambil dari dashboard summary saja (karena controller summary sudah hitung array classes)
+        // TAPI: Dashboard Controller summary hanya return jumlah. 
+        // JADI: Kita butuh endpoint khusus getMyClasses di classController atau pakai data kelas dari logic summary tadi kalau mau diedit.
+        
+        // Agar aman, kita pakai endpoint: GET /api/classes (yang mengarah ke classController.getMyClasses)
+        // Pastikan Backend classController.getMyClasses logic-nya SAMA dengan DashboardModel.getClassesByGuru
+        const classesRes = await getData('/classes'); 
+        
         if (classesRes.ok && classesRes.data.status === 'success') {
-            allClasses = classesRes.data.data;
+            // Backend classController harusnya return { status: 'success', data: [...] }
+            allClasses = classesRes.data.data; 
             renderClassList(allClasses);
         } else {
             renderClassList([]);
         }
+
     } catch (error) {
         console.error("Dashboard Load Error:", error);
-        if (typeof showToast === 'function') showToast('Gagal memuat data dashboard', 'error');
     }
 }
 
@@ -73,6 +78,7 @@ function renderClassList(dataKelas) {
     els.emptyState.classList.remove('flex');
 
     dataKelas.forEach(kelas => {
+        // Hapus tombol Delete, Hapus tombol Edit, Sisakan tombol Masuk Kelas
         const cardHTML = `
             <div class="card bg-base-100 shadow-md hover:shadow-2xl transition-all duration-300 border border-base-200 group overflow-hidden">
                 <div class="card-body p-0">
@@ -103,17 +109,9 @@ function renderClassList(dataKelas) {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-5 gap-3">
-                            <button 
-                                class="btn-delete-class col-span-1 btn btn-square btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
-                                data-id="${kelas.id}" 
-                                data-name="${kelas.nama_kelas}"
-                                title="Hapus Kelas">
-                                <i class="fa-solid fa-trash-alt pointer-events-none"></i>
-                            </button>
-                            
+                        <div class="grid grid-cols-1">
                             <a href="/guru/kelas/${kelas.id}" 
-                                class="col-span-4 btn btn-primary text-white btn-sm shadow-md group-hover:shadow-lg">
+                                class="btn btn-primary text-white btn-sm shadow-md group-hover:shadow-lg w-full">
                                 Masuk Kelas <i class="fa-solid fa-arrow-right ml-1"></i>
                             </a>
                         </div>
@@ -125,41 +123,8 @@ function renderClassList(dataKelas) {
     });
 }
 
-// --- EVENT LISTENERS ---
+// --- EVENT LISTENERS (Hanya Search) ---
 function setupEventListeners() {
-    // 1. Form Tambah Kelas
-    if(els.formTambahKelas) {
-        els.formTambahKelas.onsubmit = async (e) => {
-            e.preventDefault(); 
-            const formData = new FormData(els.formTambahKelas);
-            const data = Object.fromEntries(formData.entries());
-            const submitBtn = els.formTambahKelas.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerText;
-            
-            submitBtn.innerText = 'Menyimpan...';
-            submitBtn.disabled = true;
-
-            try {
-                const res = await postData('/classes', data);
-                if (res.ok && res.data.status === 'success') {
-                    showToast('Kelas berhasil dibuat!', 'success');
-                    els.formTambahKelas.reset(); 
-                    els.modalTambahKelas.close(); 
-                    loadDashboardData(); 
-                } else {
-                    showToast(res.data.message || 'Gagal membuat kelas', 'error');
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Terjadi kesalahan sistem', 'error');
-            } finally {
-                submitBtn.innerText = originalText;
-                submitBtn.disabled = false;
-            }
-        };
-    }
-
-    // 2. Search
     if(els.searchInput) {
         els.searchInput.addEventListener('keyup', (e) => {
             const keyword = e.target.value.toLowerCase();
@@ -169,44 +134,5 @@ function setupEventListeners() {
             );
             renderClassList(filtered);
         });
-    }
-
-    // 3. Button Tambah (Desktop Trigger)
-    if(els.btnTambahDesktop) {
-        els.btnTambahDesktop.addEventListener('click', () => {
-            if(els.modalTambahKelas) els.modalTambahKelas.showModal();
-        });
-    }
-
-    // 4. Delete Class (Event Delegation)
-    els.gridContainer.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-delete-class');
-        if (btn) {
-            const id = btn.dataset.id;
-            const name = btn.dataset.name;
-            await deleteClassAction(id, name);
-        }
-    });
-}
-
-// --- ACTIONS ---
-async function deleteClassAction(id, nama) {
-    const confirmed = await showConfirm(
-        'Hapus Kelas?', 
-        `Anda yakin ingin menghapus kelas "${nama}"? Data siswa dan nilai di dalamnya akan ikut terhapus permanen.`, 
-        'Ya, Hapus', 
-        'danger'
-    );
-
-    if (confirmed) {
-        const res = await deleteData(`/classes/${id}`);
-        
-        if (res.ok) {
-            showToast('Kelas berhasil dihapus', 'success');
-            loadDashboardData(); 
-        } else {
-            const errMsg = res.data && res.data.message ? res.data.message : 'Gagal menghapus kelas';
-            showToast(errMsg, 'error');
-        }
     }
 }

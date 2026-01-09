@@ -3,7 +3,6 @@
 export const prerender = false;
 
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
-import ModalForm from '../../../components/ui/ModalForm.astro';
 import ToastSystem from '../../../components/ui/ToastSystem.astro';
 ---
 
@@ -35,15 +34,13 @@ import ToastSystem from '../../../components/ui/ToastSystem.astro';
             <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4">
                 <div class="w-full md:w-auto">
                     <h3 class="font-bold text-lg text-gray-700 border-l-4 border-primary pl-3">Daftar Kelas</h3>
+                    <p class="text-xs text-gray-500 mt-1 pl-4">Kelas yang diampu oleh Anda.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <div class="relative w-full sm:w-64">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
-                        <input type="text" id="search-kelas" class="input input-bordered input-sm w-full pl-8" placeholder="Cari nama kelas...">
+                        <input type="text" id="search-kelas" class="input input-bordered input-sm w-full pl-8 bg-white" placeholder="Cari nama kelas...">
                     </div>
-                    <button onclick="document.getElementById('modal_add_class').showModal()" class="btn btn-primary text-white btn-sm shadow-md w-full sm:w-auto">
-                        <i class="fa-solid fa-plus"></i> Buat Kelas
-                    </button>
                 </div>
             </div>
 
@@ -57,18 +54,19 @@ import ToastSystem from '../../../components/ui/ToastSystem.astro';
                                 <th>Tahun Ajaran</th>
                                 <th class="text-center">Siswa</th>
                                 <th class="text-center">Tugas</th>
-                                <th class="text-center w-20">Aksi</th>
-                            </tr>
+                                </tr>
                         </thead>
-                        <tbody id="table-kelas-body" class="text-sm"></tbody>
+                        <tbody id="table-kelas-body" class="text-sm">
+                            </tbody>
                     </table>
                 </div>
-                <div id="empty-kelas" class="hidden flex-col items-center justify-center py-12 text-center">
+                
+                <div id="empty-kelas" class="hidden flex flex-col items-center justify-center py-12 text-center">
                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                         <i class="fa-solid fa-chalkboard text-2xl text-gray-300"></i>
                     </div>
                     <p class="text-gray-500 font-medium">Belum ada kelas.</p>
-                    <p class="text-xs text-gray-400">Silakan buat kelas baru terlebih dahulu.</p>
+                    <p class="text-xs text-gray-400">Hubungi Admin untuk plotting kelas.</p>
                 </div>
             </div>
         </div>
@@ -80,12 +78,12 @@ import ToastSystem from '../../../components/ui/ToastSystem.astro';
                     <p class="text-xs text-gray-500 mt-1 pl-4">Monitoring tugas yang sedang berjalan.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                    <select id="filter-kelas-tugas" class="select select-bordered select-sm w-full sm:w-40">
+                    <select id="filter-kelas-tugas" class="select select-bordered select-sm w-full sm:w-40 bg-white">
                         <option value="all">Semua Kelas</option>
                     </select>
                     <div class="relative w-full sm:w-56">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
-                        <input type="text" id="search-tugas" class="input input-bordered input-sm w-full pl-8" placeholder="Cari judul tugas...">
+                        <input type="text" id="search-tugas" class="input input-bordered input-sm w-full pl-8 bg-white" placeholder="Cari judul tugas...">
                     </div>
                     <button onclick="openModalTask()" class="btn btn-primary text-white btn-sm shadow-md w-full sm:w-auto">
                         <i class="fa-solid fa-plus"></i> Tugas Baru
@@ -95,7 +93,7 @@ import ToastSystem from '../../../components/ui/ToastSystem.astro';
 
             <div id="task-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
             
-            <div id="empty-tugas" class="hidden flex-col items-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-center shadow-sm">
+            <div id="empty-tugas" class="hidden flex flex-col items-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-center shadow-sm">
                 <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
                     <i class="fa-solid fa-clipboard-list text-2xl text-blue-300"></i>
                 </div>
@@ -105,19 +103,6 @@ import ToastSystem from '../../../components/ui/ToastSystem.astro';
         </div>
 
     </div>
-
-    <ModalForm id="modal_add_class" title="Buat Kelas Baru" submitLabel="Simpan Kelas">
-        <div class="space-y-4">
-            <div class="form-control">
-                <label class="label font-semibold text-gray-600">Nama Kelas</label>
-                <input type="text" name="nama_kelas" class="input input-bordered w-full" placeholder="Contoh: XII IPA 1" required />
-            </div>
-            <div class="form-control">
-                <label class="label font-semibold text-gray-600">Tahun Ajaran</label>
-                <input type="text" name="tahun_ajaran" class="input input-bordered w-full" placeholder="Contoh: 2024/2025" required />
-            </div>
-        </div>
-    </ModalForm>
 
     <dialog id="modal_create_task" class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
         <div class="modal-box w-full max-w-4xl p-0 rounded-t-xl sm:rounded-xl bg-base-100 h-[90vh] sm:h-auto overflow-hidden flex flex-col">

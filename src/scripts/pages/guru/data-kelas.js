@@ -76,17 +76,7 @@ window.downloadQuizTemplate = (e) => {
     a.click();
 };
 
-window.deleteClass = async (id, nama) => {
-    if(confirm(`Hapus Kelas ${nama}? Data siswa di dalamnya mungkin akan terpengaruh.`)) {
-        try {
-            await deleteData(`/classes/${id}`);
-            loadClasses();
-            showToast('Kelas Berhasil Dihapus', 'success');
-        } catch (error) {
-            showToast('Gagal menghapus kelas', 'error');
-        }
-    }
-};
+// --- FUNGSI HAPUS KELAS DIHAPUS (GURU READ ONLY) ---
 
 window.handleDeleteTask = async (id, nama) => {
     if(confirm(`Hapus tugas "${nama}"?`)) {
@@ -113,8 +103,7 @@ async function loadClasses() {
         const selectTask = document.getElementById('select-kelas-tugas');
         const filterTask = document.getElementById('filter-kelas-tugas');
         const emptyState = document.getElementById('empty-kelas');
-        const tableContainer = document.querySelector('.table'); // Pastikan selector spesifik jika ada banyak table
-
+        
         if (!tbody) return;
 
         tbody.innerHTML = '';
@@ -124,10 +113,9 @@ async function loadClasses() {
         if (res.ok && res.data.data && res.data.data.length > 0) {
             classesData = res.data.data;
             if(emptyState) emptyState.classList.add('hidden');
-            if(tableContainer) tableContainer.classList.remove('hidden');
 
             classesData.forEach((c, i) => {
-                // Populate Table
+                // Populate Table - TANPA TOMBOL DELETE
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="hover group transition-colors">
                         <th class="text-center text-gray-500">${i+1}</th>
@@ -135,14 +123,7 @@ async function loadClasses() {
                         <td class="font-mono text-gray-500 text-xs">${c.tahun_ajaran}</td>
                         <td class="text-center"><span class="badge badge-sm badge-ghost font-medium">${c.jumlah_siswa || 0} Siswa</span></td>
                         <td class="text-center"><span class="badge badge-sm badge-ghost font-medium">${c.jumlah_tugas || 0} Tugas</span></td>
-                        <td class="text-center">
-                            <button class="btn btn-square btn-xs btn-error btn-outline hover:btn-active tooltip tooltip-left" 
-                                data-tip="Hapus Kelas"
-                                onclick="deleteClass('${c.id}', '${c.nama_kelas}')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
+                        </tr>
                 `);
                 
                 // Populate Select Options
@@ -154,7 +135,6 @@ async function loadClasses() {
             loadAllTasks(classesData);
         } else {
             if(emptyState) emptyState.classList.remove('hidden');
-            if(tableContainer) tableContainer.classList.add('hidden');
         }
     } catch (error) {
         console.error("Failed loading classes", error);
@@ -337,28 +317,7 @@ function setupForms() {
         });
     }
 
-    // 2. Form Create Class
-    const formClass = document.querySelector('#modal_add_class form');
-    if (formClass) {
-        formClass.addEventListener('submit', async(e)=>{ 
-            e.preventDefault(); 
-            const fd = new FormData(formClass); 
-            
-            try {
-                const res = await postData('/classes', Object.fromEntries(fd)); 
-                if(res.ok){ 
-                    document.getElementById('modal_add_class').close(); 
-                    formClass.reset();
-                    loadClasses(); 
-                    showToast('Kelas Berhasil Dibuat', 'success');
-                } else {
-                    showToast(res.data.message || 'Gagal', 'error');
-                }
-            } catch (error) {
-                showToast('Gagal koneksi server', 'error');
-            }
-        });
-    }
+    // LISTENER FORM CREATE CLASS DIHAPUS KARENA SUDAH TIDAK ADA HTML-NYA
 }
 
 function setupQuizLogic() {

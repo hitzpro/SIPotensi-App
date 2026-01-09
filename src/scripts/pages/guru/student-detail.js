@@ -106,14 +106,21 @@ function renderTugasTable(tugas) {
             const label = `<span class="hidden sm:inline ml-1">Lihat</span>`;
 
             if(jenisTugas === 'upload' && submission.file_url) {
-                // Bersihkan URL
-                let cleanPath = submission.file_url.replace(/\\/g, '/'); // Ganti backslash windows
-                const serverUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '');
-                // Handle jika URL sudah lengkap atau relatif
-                const fullUrl = cleanPath.startsWith('http') ? cleanPath : `${serverUrl}/${cleanPath}`;
+                // --- PERBAIKAN DI SINI ---
+                // HAPUS logika const serverUrl = ...
+                // HAPUS logika const fullUrl = ...
+                
+                // Gunakan path mentah langsung dari database
+                // Contoh: "C:/Users/Lenovo/AppData/Local/Temp/file.pdf"
+                const rawPath = submission.file_url; 
+                
+                // Encode agar aman masuk ke HTML string (mengatasi spasi/karakter aneh)
+                const encodedPath = encodeURIComponent(rawPath);
                 
                 btnPreview = `
-                    <button class="${btnClass} btn-info" onclick="showPreviewImage('${fullUrl}')" title="Lihat File">
+                    <button class="${btnClass} btn-info" 
+                        onclick="showPreviewImage(decodeURIComponent('${encodedPath}'))" 
+                        title="Lihat File">
                         ${icon} ${label}
                     </button>`;
             } else if (jenisTugas === 'quiz') {
@@ -254,22 +261,30 @@ function openEditTugas(id, nama, nilai) {
  * REFACTOR UTAMA DI SINI
  * Logika preview yang lebih cerdas untuk membedakan PDF dan Gambar
  */
-async function showPreviewImage(url) {
+async function showPreviewImage(rawPath) { 
+    // rawPath harusnya: "C:/Users/Lenovo/AppData/Local/Temp/..."
+    
     els.modalQuiz.showModal();
-    els.quizContent.innerHTML = '<div class="flex justify-center py-10"><span class="loading loading-spinner text-primary"></span> Memuat & Menganalisa File...</div>';
+    els.quizContent.innerHTML = '<div class="flex justify-center py-10"><span class="loading loading-spinner text-primary"></span> Memuat File...</div>';
 
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(url, {
+        
+        // Panggil endpoint stream dengan raw path yang di-encode
+        const apiUrl = `${API_CONFIG.BASE_URL}/files/stream?path=${encodeURIComponent(rawPath)}`;
+
+        // Debugging (Cek di Console Browser)
+        console.log("Request Stream URL:", apiUrl);
+
+        const response = await fetch(apiUrl, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Gagal mengambil file");
+        if (!response.ok) throw new Error("Gagal mengambil file (Pastikan backend fileRoutes sudah terpasang)");
 
         const originalBlob = await response.blob();
         
-        // --- LOGIC DETEKSI TIPE FILE (MAGIC NUMBERS) ---
-        // Kita baca header file-nya secara manual
+        // --- DETEKSI TIPE MAGIC NUMBER ---
         const arrayBuffer = await originalBlob.slice(0, 4).arrayBuffer();
         const header = new Uint8Array(arrayBuffer);
         let headerHex = "";
@@ -278,44 +293,32 @@ async function showPreviewImage(url) {
         }
 
         let finalType = '';
-        
-        // Cek Signature
         if (headerHex.startsWith('25504446')) {
-            finalType = 'application/pdf'; // Signature PDF (%PDF)
+            finalType = 'application/pdf';
         } else if (headerHex.startsWith('FFD8FF')) {
-            finalType = 'image/jpeg';      // Signature JPG
+            finalType = 'image/jpeg';
         } else if (headerHex.startsWith('89504E47')) {
-            finalType = 'image/png';       // Signature PNG
+            finalType = 'image/png';
         } else {
-            // Fallback: Percaya header server atau default
             finalType = originalBlob.type || 'application/octet-stream';
         }
 
-        // Buat Blob baru dengan tipe yang SUDAH DIPAKSA BENAR
         const fixedBlob = new Blob([originalBlob], { type: finalType });
         const objectUrl = URL.createObjectURL(fixedBlob);
 
         // --- RENDER ---
         let content = '';
-
         if (finalType.startsWith('image/')) {
-            content = `
-                <div class="relative w-full h-[75vh] flex items-center justify-center bg-gray-900/5 rounded-lg">
-                    <img src="${objectUrl}" class="max-w-full max-h-full object-contain shadow-sm" alt="Preview">
-                </div>
-            `;
+            content = `<div class="relative w-full h-[75vh] flex items-center justify-center bg-gray-900/5 rounded-lg">
+                        <img src="${objectUrl}" class="max-w-full max-h-full object-contain shadow-sm" alt="Preview">
+                       </div>`;
         } else if (finalType === 'application/pdf') {
-            content = `
-                <iframe src="${objectUrl}" class="w-full h-[75vh] border-0 rounded-lg bg-gray-100"></iframe>
-            `;
+            content = `<iframe src="${objectUrl}" class="w-full h-[75vh] border-0 rounded-lg bg-gray-100"></iframe>`;
         } else {
-            content = `
-                <div class="flex flex-col items-center justify-center h-64 text-gray-400">
-                    <i class="fa-solid fa-file-circle-question text-6xl mb-4 text-gray-300"></i>
-                    <p class="font-semibold text-gray-600">Format tidak dikenali</p>
-                    <p class="text-xs mt-2 font-mono">Header: ${headerHex}</p>
-                </div>
-            `;
+            content = `<div class="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <i class="fa-solid fa-file-circle-question text-6xl mb-4 text-gray-300"></i>
+                        <p class="font-semibold text-gray-600">Format tidak didukung preview</p>
+                       </div>`;
         }
 
         els.quizContent.innerHTML = `
@@ -324,10 +327,8 @@ async function showPreviewImage(url) {
                     ${content}
                 </div>
                 <div class="flex justify-between items-center pt-3 border-t border-gray-100 shrink-0">
-                    <div class="text-xs text-gray-400">
-                        Mode: Blob Reader (${finalType})
-                    </div>
-                    <a href="${url}" target="_blank" download class="btn btn-primary btn-sm text-white w-full sm:w-auto shadow-md gap-2">
+                    <div class="text-xs text-gray-400">Type: ${finalType}</div>
+                    <a href="${apiUrl}" target="_blank" download class="btn btn-primary btn-sm text-white w-full sm:w-auto shadow-md gap-2">
                         <i class="fa-solid fa-download"></i> Download Asli
                     </a>
                 </div>
@@ -336,10 +337,7 @@ async function showPreviewImage(url) {
 
     } catch (error) {
         console.error(error);
-        els.quizContent.innerHTML = `
-            <div class="alert alert-error">Gagal memproses file.</div>
-            <div class="flex justify-end mt-4"><a href="${url}" target="_blank" class="btn btn-sm">Coba Download</a></div>
-        `;
+        els.quizContent.innerHTML = `<div class="alert alert-error">Gagal memuat file: ${error.message}</div>`;
     }
 }
 

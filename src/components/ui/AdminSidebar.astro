@@ -1,0 +1,38 @@
+---
+const currentPath = Astro.url.pathname;
+
+const isActive = (path) => {
+    if (path === '/admin' && (currentPath === '/admin' || currentPath === '/admin/')) return true;
+    if (path !== '/admin' && currentPath.includes(path)) return true;
+    return false;
+};
+---
+
+<aside class="hidden lg:flex flex-col w-64 h-screen fixed bg-base-100 border-r border-base-300 z-50">
+  <div class="h-16 flex items-center justify-center border-b border-base-300">
+    <h1 class="text-2xl font-bold text-primary flex items-center gap-2">
+        <i class="fa-solid fa-graduation-cap"></i> SIPotensi
+        <span class="text-xs bg-primary/10 px-2 py-0.5 rounded text-primary border border-primary/20">Admin</span>
+    </h1>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+    <a href="/admin" class={`btn btn-ghost w-full justify-start ${isActive('/admin') ? 'btn-active text-primary bg-emerald-50' : 'hover:text-primary'}`}>
+        <i class="fa-solid fa-chart-pie w-6"></i> Dashboard
+    </a>
+
+    <a href="/admin/guru" class={`btn btn-ghost w-full justify-start ${isActive('/admin/guru') ? 'btn-active text-primary bg-emerald-50' : 'hover:text-primary'}`}>
+        <i class="fa-solid fa-chalkboard-user w-6"></i> Data Guru
+    </a>
+
+    <a href="/admin/dokumen" class={`btn btn-ghost w-full justify-start ${isActive('/admin/dokumen') ? 'btn-active text-primary bg-emerald-50' : 'hover:text-primary'}`}>
+        <i class="fa-solid fa-file-export w-6"></i> Kirim Dokumen
+    </a>
+  </nav>
+
+  <div class="p-4 border-t border-base-300">
+    <button onclick="handleSidebarLogout()" class="btn btn-outline btn-error w-full gap-2">
+        <i class="fa-solid fa-sign-out-alt"></i> Logout
+    </button>
+  </div>
+</aside>

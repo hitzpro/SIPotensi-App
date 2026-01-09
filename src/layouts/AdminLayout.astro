@@ -1,0 +1,46 @@
+---
+import AdminSidebar from '../components/ui/AdminSidebar.astro';
+import AdminBottomNav from '../components/ui/AdminBottomNav.astro';
+import AlertSystem from '../components/ui/AlertSystem.astro'; // Load AlertSystem global
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="id" data-theme="emerald">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | Admin SIPotensi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+    />
+</head>
+<body class="bg-base-200 min-h-screen font-sans pb-24 lg:pb-0">
+    
+    <AdminSidebar />
+    <AdminBottomNav />
+    <AlertSystem />
+
+    <main class="lg:ml-64 min-h-screen transition-all duration-300">
+        <div class="p-4 lg:p-8">
+            <slot />
+        </div>
+    </main>
+
+    <script is:inline>
+        window.handleSidebarLogout = () => {
+             // Panggil showConfirm dari AlertSystem
+             window.showConfirm('Konfirmasi Logout', 'Apakah Anda yakin ingin keluar dari sistem?', 'Logout', 'danger')
+             .then((confirmed) => {
+                if(confirmed) {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }
+             });
+        }
+    </script>
+</body>
+</html>

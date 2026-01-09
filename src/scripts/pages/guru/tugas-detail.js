@@ -17,8 +17,6 @@ const els = {
     formEdit: document.getElementById('form-edit-task'),
     modalPreview: document.getElementById('modal_preview'),
     previewContent: document.getElementById('preview-content'),
-    
-    // Edit Form Inputs
     editNama: document.getElementById('edit-nama'),
     editDeadline: document.getElementById('edit-deadline'),
     editDeskripsi: document.getElementById('edit-deskripsi'),
@@ -39,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEditForm();
     }
 
-    // Global bindings for HTML onclick
     window.previewFile = previewFile;
     window.openEditModal = openEditModal;
 });
@@ -47,10 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- DATA LOADING ---
 async function loadPageData() {
     try {
-        // 1. Ambil Detail Tugas + Soal
         const resDetail = await getData(`/classes/tugas/${TASK_ID}/detail`);
-        
-        // 2. Ambil Submission
         const resSub = await getData(`/classes/tugas/${TASK_ID}/submissions`);
 
         if(resDetail.ok) {
@@ -64,7 +58,7 @@ async function loadPageData() {
         }
     } catch (error) {
         console.error("Gagal memuat data:", error);
-        showToast("Gagal memuat detail tugas", "error");
+        if(typeof showToast === 'function') showToast("Gagal memuat detail tugas", "error");
     }
 }
 
@@ -77,36 +71,39 @@ function renderTaskHeader(task) {
     els.textDeadline.innerText = new Date(task.deadline).toLocaleString('id-ID');
     els.infoDesc.innerText = task.deskripsi || '(Tidak ada deskripsi)';
     
-    // Show Meta
     els.metaContainer.classList.remove('hidden');
     els.metaSkeleton.classList.add('hidden');
 }
 
+// [UPDATE] Logic Preview Soal yang Benar
 function renderSoalPreview(task) {
     els.previewArea.innerHTML = '';
 
     // --- TOMBOL DOWNLOAD FILE ASLI ---
     let fileInfoHtml = '';
     if (task.file_soal) {
-        let url = task.file_soal.replace(/\\/g, '/');
-        // Fix relative path if needed
-        if(!url.startsWith('http')) url = `${API_CONFIG.BASE_URL.replace('/api','')}/${url}`;
+        // Path mentah dari DB (misal: C:/Users/Temp/file.pdf)
+        const rawPath = task.file_soal;
+        // URL Stream API untuk Download langsung
+        const streamUrl = `${API_CONFIG.BASE_URL}/files/stream?path=${encodeURIComponent(rawPath)}`;
         
         const labelFile = task.jenis_tugas === 'quiz' ? 'File CSV Quiz' : 'File Soal';
         const iconFile = task.jenis_tugas === 'quiz' ? 'fa-file-csv text-green-600' : 'fa-file-pdf text-red-600';
 
         fileInfoHtml = `
-            <div class="alert shadow-sm border border-gray-200 bg-gray-50 mb-4 p-2 flex justify-between">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid ${iconFile} text-xl ml-2"></i>
-                    <div>
-                        <div class="font-bold text-xs">${labelFile} Tersimpan</div>
-                        <div class="text-[10px] text-gray-500">Klik lihat untuk preview/download</div>
+            <div class="alert shadow-sm border border-gray-200 bg-gray-50 mb-4 p-3 flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center rounded-xl">
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                        <i class="fa-solid ${iconFile} text-xl"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-bold text-xs truncate">${labelFile} Tersimpan</div>
+                        <div class="text-[10px] text-gray-500 truncate">Klik lihat untuk preview/download</div>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <a href="${url}" target="_blank" class="btn btn-xs btn-outline">Download</a>
-                    ${task.jenis_tugas === 'upload' ? `<button class="btn btn-xs btn-primary text-white" onclick="previewFile('${url}')">Preview</button>` : ''}
+                <div class="flex gap-2 w-full sm:w-auto mt-1 sm:mt-0">
+                    <a href="${streamUrl}" target="_blank" download class="btn btn-xs btn-outline flex-1 sm:flex-none">Download</a>
+                    ${task.jenis_tugas === 'upload' ? `<button class="btn btn-xs btn-primary text-white flex-1 sm:flex-none" onclick="previewFile('${encodeURIComponent(rawPath)}')">Preview</button>` : ''}
                 </div>
             </div>
         `;
@@ -118,7 +115,7 @@ function renderSoalPreview(task) {
         renderQuizTable(task);
     } else if (task.jenis_tugas === 'upload') {
         if (!task.file_soal && !task.deskripsi) {
-            els.previewArea.insertAdjacentHTML('beforeend', `<div class="text-sm text-gray-400 italic text-center py-4">Tidak ada file soal maupun deskripsi.</div>`);
+            els.previewArea.insertAdjacentHTML('beforeend', `<div class="text-sm text-gray-400 italic text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">Tidak ada file soal maupun deskripsi.</div>`);
         }
     }
 }
@@ -128,35 +125,35 @@ function renderQuizTable(task) {
     
     if (soalList.length === 0) {
         els.previewArea.insertAdjacentHTML('beforeend', `
-            <div class="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
+            <div class="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50/50">
                 <i class="fa-solid fa-triangle-exclamation text-warning text-2xl mb-2"></i>
                 <p class="text-sm font-bold text-gray-600">Soal belum ter-extract ke Database</p>
-                <p class="text-xs text-gray-400 mt-1">File CSV mungkin sudah ada, tapi belum terbaca.</p>
-                <button class="btn btn-xs btn-primary mt-2" onclick="openEditModal()">Upload Ulang CSV</button>
+                <p class="text-xs text-gray-400 mt-1 max-w-xs mx-auto">File CSV mungkin sudah ada, tapi belum terbaca.</p>
+                <button class="btn btn-xs btn-primary mt-3 shadow-md" onclick="openEditModal()">Upload Ulang CSV</button>
             </div>
         `);
         return;
     }
 
     let rows = soalList.map((s, i) => `
-        <tr class="hover">
-            <th>${i+1}</th>
+        <tr class="hover group">
+            <th class="text-center text-gray-500 font-medium">${i+1}</th>
             <td class="text-xs">
-                <div class="font-bold mb-1 text-gray-800">${s.pertanyaan}</div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-gray-600">
-                    <span class="${s.kunci_jawaban=='a'?'text-success font-bold bg-green-50 px-1 rounded':''}">A. ${s.pilihan_a}</span>
-                    <span class="${s.kunci_jawaban=='b'?'text-success font-bold bg-green-50 px-1 rounded':''}">B. ${s.pilihan_b}</span>
-                    <span class="${s.kunci_jawaban=='c'?'text-success font-bold bg-green-50 px-1 rounded':''}">C. ${s.pilihan_c}</span>
-                    <span class="${s.kunci_jawaban=='d'?'text-success font-bold bg-green-50 px-1 rounded':''}">D. ${s.pilihan_d}</span>
+                <div class="font-bold mb-2 text-gray-800 leading-snug">${s.pertanyaan}</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-600">
+                    <div class="p-1.5 rounded border ${s.kunci_jawaban=='a'?'bg-green-50 border-green-200 text-green-700 font-semibold shadow-sm':'border-gray-100 bg-white'}">A. ${s.pilihan_a}</div>
+                    <div class="p-1.5 rounded border ${s.kunci_jawaban=='b'?'bg-green-50 border-green-200 text-green-700 font-semibold shadow-sm':'border-gray-100 bg-white'}">B. ${s.pilihan_b}</div>
+                    <div class="p-1.5 rounded border ${s.kunci_jawaban=='c'?'bg-green-50 border-green-200 text-green-700 font-semibold shadow-sm':'border-gray-100 bg-white'}">C. ${s.pilihan_c}</div>
+                    <div class="p-1.5 rounded border ${s.kunci_jawaban=='d'?'bg-green-50 border-green-200 text-green-700 font-semibold shadow-sm':'border-gray-100 bg-white'}">D. ${s.pilihan_d}</div>
                 </div>
             </td>
         </tr>
     `).join('');
 
     els.previewArea.insertAdjacentHTML('beforeend', `
-        <div class="overflow-x-auto max-h-[500px] border rounded-lg bg-white">
+        <div class="overflow-x-auto max-h-[500px] border border-gray-200 rounded-xl bg-white shadow-sm custom-scrollbar">
             <table class="table table-xs table-pin-rows">
-                <thead class="bg-gray-100"><tr><th class="w-10">No</th><th>Pertanyaan & Kunci Jawaban</th></tr></thead>
+                <thead class="bg-gray-50 text-gray-500"><tr><th class="w-10">No</th><th>Pertanyaan & Kunci Jawaban</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>
@@ -175,20 +172,20 @@ function renderSubmissions(subs) {
     subs.forEach(s => {
         let btnAction = '-';
         if (s.file_download_url) {
-            let url = s.file_download_url.replace(/\\/g, '/');
-            if(!url.startsWith('http')) url = `${API_CONFIG.BASE_URL.replace('/api','')}/${url}`;
-            btnAction = `<button class="btn btn-xs btn-outline" onclick="previewFile('${url}')"><i class="fa-solid fa-eye"></i></button>`;
+            // Encode Raw Path
+            const encodedPath = encodeURIComponent(s.file_download_url);
+            btnAction = `<button class="btn btn-xs btn-outline btn-info" onclick="previewFile('${encodedPath}')"><i class="fa-solid fa-eye"></i></button>`;
         }
 
         const row = `
-            <tr>
+            <tr class="hover">
                 <td>
-                    <div class="font-bold text-sm">${s.siswa.nama}</div>
-                    <div class="text-xs text-gray-400">${s.siswa.nisn}</div>
+                    <div class="font-bold text-sm text-gray-800">${s.siswa.nama}</div>
+                    <div class="text-xs text-gray-400 font-mono">${s.siswa.nisn}</div>
                 </td>
-                <td><span class="badge badge-success badge-xs">Dikumpulkan</span></td>
-                <td class="font-bold">${s.nilai_sekarang ?? '-'}</td>
-                <td>${btnAction}</td>
+                <td><span class="badge badge-success badge-xs font-semibold px-2">Dikumpulkan</span></td>
+                <td class="font-bold text-gray-700 text-center">${s.nilai_sekarang ?? '-'}</td>
+                <td class="text-center">${btnAction}</td>
             </tr>
         `;
         els.submissionBody.insertAdjacentHTML('beforeend', row);
@@ -202,12 +199,10 @@ function openEditModal() {
     els.editNama.value = currentTask.nama_tugas;
     els.editDeskripsi.value = currentTask.deskripsi || '';
     
-    // Format datetime-local
     const d = new Date(currentTask.deadline);
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     els.editDeadline.value = d.toISOString().slice(0,16);
 
-    // Setup File Input UI
     const fileInput = els.editFileContainer.querySelector('input[type="file"]');
     const labelFile = els.editFileContainer.querySelector('.label.font-semibold');
     const labelHelp = els.editFileContainer.querySelector('.label.text-xs');
@@ -234,7 +229,7 @@ function setupEditForm() {
         const btn = els.formEdit.querySelector('button[type="submit"]');
         const originalText = btn.innerText;
         
-        btn.disabled = true; btn.innerText = 'Menyimpan...';
+        btn.disabled = true; btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
 
         try {
             const token = localStorage.getItem('token');
@@ -246,44 +241,116 @@ function setupEditForm() {
             const result = await res.json();
 
             if(res.ok) {
-                showToast('Tugas Berhasil Diupdate', 'success');
+                if(typeof showToast === 'function') showToast('Tugas Berhasil Diupdate', 'success');
                 els.modalEdit.close();
                 loadPageData(); 
             } else {
-                showToast(result.message || 'Gagal update', 'error');
+                if(typeof showToast === 'function') showToast(result.message || 'Gagal update', 'error');
             }
         } catch(err) {
             console.error(err);
-            showToast('Terjadi kesalahan', 'error');
+            if(typeof showToast === 'function') showToast('Terjadi kesalahan', 'error');
         } finally {
             btn.disabled = false; btn.innerText = originalText;
         }
     }
 }
 
-// --- PREVIEW FILE HELPER ---
-function previewFile(url) {
+// --- [UPDATE] PREVIEW FILE HELPER (STREAM API) ---
+async function previewFile(encodedRawPath) {
     if (!els.previewContent) return;
-
-    els.previewContent.innerHTML = '';
-    const isPdf = url.toLowerCase().endsWith('.pdf');
     
-    if (isPdf) {
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.className = "w-full h-full border-0 rounded-lg";
-        iframe.innerHTML = "Browser Anda tidak mendukung preview PDF.";
-        els.previewContent.appendChild(iframe);
-    } else {
-        const img = document.createElement('img');
-        img.src = url;
-        img.className = "max-w-full max-h-full object-contain rounded-lg shadow-sm";
-        img.alt = "Preview File";
-        img.onerror = function() {
-            this.src = 'https://placehold.co/600x400?text=File+Tidak+Ditemukan';
-        };
-        els.previewContent.appendChild(img);
-    }
-
+    const rawPath = decodeURIComponent(encodedRawPath);
+    
+    // UI Loading
+    els.previewContent.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-20 gap-3">
+            <span class="loading loading-spinner loading-lg text-primary"></span> 
+            <span class="text-sm text-gray-500 animate-pulse">Mengunduh & Memproses File...</span>
+        </div>`;
     els.modalPreview.showModal();
+
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = `${API_CONFIG.BASE_URL}/files/stream?path=${encodeURIComponent(rawPath)}`;
+
+        const response = await fetch(apiUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error("Gagal mengambil file stream");
+
+        const originalBlob = await response.blob();
+        
+        // --- DETEKSI HEADER HEX ---
+        const arrayBuffer = await originalBlob.slice(0, 4).arrayBuffer();
+        const header = new Uint8Array(arrayBuffer);
+        let headerHex = "";
+        for (let i = 0; i < header.length; i++) {
+            headerHex += header[i].toString(16).toUpperCase();
+        }
+
+        let finalType = '';
+        if (headerHex.startsWith('25504446')) {
+            finalType = 'application/pdf';
+        } else if (headerHex.startsWith('FFD8FF')) {
+            finalType = 'image/jpeg';
+        } else if (headerHex.startsWith('89504E47')) {
+            finalType = 'image/png';
+        } else {
+            finalType = originalBlob.type || 'application/octet-stream';
+        }
+
+        const fixedBlob = new Blob([originalBlob], { type: finalType });
+        const objectUrl = URL.createObjectURL(fixedBlob);
+
+        // --- RENDER CONTENT ---
+        let content = '';
+        if (finalType.startsWith('image/')) {
+            content = `
+                <div class="w-full h-full flex items-center justify-center bg-gray-900/5 rounded-lg overflow-hidden">
+                    <img src="${objectUrl}" class="max-w-full max-h-full object-contain shadow-sm" alt="Preview">
+                </div>
+            `;
+        } else if (finalType === 'application/pdf') {
+            content = `
+                <iframe src="${objectUrl}" class="w-full h-full border-0 rounded-lg bg-white shadow-inner"></iframe>
+            `;
+        } else {
+            content = `
+                <div class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-300 m-4">
+                    <i class="fa-solid fa-file-circle-question text-6xl mb-4 text-gray-300"></i>
+                    <p class="font-semibold text-gray-600">Format tidak didukung preview</p>
+                    <p class="text-xs mt-1">Header: ${headerHex}</p>
+                </div>
+            `;
+        }
+
+        els.previewContent.innerHTML = `
+            <div class="flex flex-col h-full">
+                <div class="flex-1 overflow-hidden relative bg-gray-100 rounded-lg">
+                    ${content}
+                </div>
+                <div class="flex justify-between items-center pt-4 px-1 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="badge badge-ghost badge-sm font-mono text-[10px]">${finalType}</span>
+                        <span class="text-xs text-gray-400 hidden sm:inline">Size: ${(originalBlob.size/1024).toFixed(1)} KB</span>
+                    </div>
+                    <a href="${apiUrl}" target="_blank" download class="btn btn-primary btn-sm text-white shadow-md gap-2">
+                        <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Download Asli</span>
+                    </a>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error(error);
+        els.previewContent.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-64 text-error bg-red-50 rounded-lg m-4 border border-red-100">
+                <i class="fa-solid fa-circle-exclamation text-4xl mb-2"></i>
+                <p class="font-bold">Gagal Memuat File</p>
+                <p class="text-xs text-red-400 mt-1">${error.message}</p>
+                <a href="${API_CONFIG.BASE_URL}/files/stream?path=${encodeURIComponent(rawPath)}" target="_blank" class="btn btn-xs btn-outline btn-error mt-4">Coba Link Langsung</a>
+            </div>`;
+    }
 }

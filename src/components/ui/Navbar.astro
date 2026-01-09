@@ -1,72 +1,213 @@
 <div class="navbar bg-base-100 shadow-sm sticky top-0 z-40 px-4">
-    <!-- Kiri: Brand / Dashboard Text -->
-    <div class="navbar-start">
-      <!-- Menggunakan text-primary agar warnanya Hijau Emerald -->
+  <div class="navbar-start gap-3">
       <div class="text-xl font-bold text-primary">Dashboard</div>
-    </div>
-  
-    <!-- Kanan: Profile & Dropdown -->
-    <div class="navbar-end">
-      <!-- Nama User (Diisi oleh JS) -->
+      
+      <button class="btn btn-ghost btn-circle relative" onclick="openNotifModal()">
+          <i class="fa-solid fa-bell text-xl text-gray-600"></i>
+          <span id="notif-badge" class="badge badge-xs badge-error absolute top-2 right-2 hidden border-white border-2"></span>
+      </button>
+  </div>
+
+  <div class="navbar-end">
       <span id="nav-username" class="mr-3 text-sm font-semibold hidden sm:inline-block skeleton w-24 h-4 rounded"></span>
       
       <div class="dropdown dropdown-end">
-        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
-          <!-- Avatar Inisial (Diisi oleh JS) -->
-          <div class="bg-primary text-primary-content rounded-full w-10 ring ring-primary ring-offset-base-100 ring-offset-2">
-            <span id="nav-initial" class="text-xl font-bold">...</span>
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
+              <div class="bg-primary text-primary-content rounded-full w-10 ring ring-primary ring-offset-base-100 ring-offset-2">
+                  <span id="nav-initial" class="text-xl font-bold">...</span>
+              </div>
           </div>
-        </div>
-        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-          <!-- Hapus menu yang tidak diminta, sisakan Logout -->
-          <li>
-              <button id="btn-logout" class="text-error font-bold hover:bg-error hover:text-white">
-                  <i class="fa-solid fa-sign-out-alt"></i> Logout
-              </button>
-          </li>
-        </ul>
+          <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+              <li>
+                  <button id="btn-logout" class="text-error font-bold hover:bg-error hover:text-white">
+                      <i class="fa-solid fa-sign-out-alt"></i> Logout
+                  </button>
+              </li>
+          </ul>
       </div>
-    </div>
   </div>
-  
-  <script is:inline>
-    // 1. Ambil data user dari LocalStorage
-    const userString = localStorage.getItem('user');
-    
-    // Elemen DOM
-    const nameEl = document.getElementById('nav-username');
-    const initialEl = document.getElementById('nav-initial');
-    const logoutBtn = document.getElementById('btn-logout');
-  
-    if (userString) {
+</div>
+
+<dialog id="modal_notif" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box p-0 max-h-[80vh] flex flex-col w-full max-w-md mx-auto">
+      <div class="p-4 border-b flex justify-between items-center bg-base-100 sticky top-0 z-10 shadow-sm">
+          <h3 class="font-bold text-lg flex items-center gap-2 text-gray-800">
+              <i class="fa-solid fa-bell text-primary"></i> Notifikasi
+          </h3>
+          <form method="dialog">
+              <button class="btn btn-sm btn-circle btn-ghost text-gray-500 hover:bg-gray-100">✕</button>
+          </form>
+      </div>
+
+      <div class="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
+          
+          <div id="mark-read-container" class="hidden px-4 py-3 bg-white border-b border-gray-100 flex justify-end">
+              <button onclick="markAllRead()" class="text-xs font-semibold text-primary hover:text-primary-focus flex items-center gap-1 transition-colors">
+                  <i class="fa-solid fa-check-double"></i> Tandai semua dibaca
+              </button>
+          </div>
+
+          <div id="notif-list" class="p-2 space-y-2 flex-1">
+              <div class="flex justify-center py-10">
+                  <span class="loading loading-spinner text-primary"></span>
+              </div>
+          </div>
+      </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+  </form>
+</dialog>
+
+<script>
+  import { getData, putData } from '../../scripts/utils/api.js';
+
+  // --- 1. USER LOGIC ---
+  const userString = localStorage.getItem('user');
+  if (userString) {
       try {
-        const user = JSON.parse(userString);
-        
-        // Update Nama
-        nameEl.innerText = user.nama || "User";
-        nameEl.classList.remove('skeleton'); // Hapus efek loading
-  
-        // Update Inisial (Ambil huruf pertama)
-        const initial = user.nama ? user.nama.charAt(0).toUpperCase() : "U";
-        initialEl.innerText = initial;
-  
-      } catch (e) {
-        console.error("Gagal parse user data", e);
-      }
-    } else {
-      // Kalau tidak ada user login, lempar ke halaman login
+          const user = JSON.parse(userString);
+          document.getElementById('nav-username').innerText = user.nama || "User";
+          document.getElementById('nav-username').classList.remove('skeleton'); 
+          document.getElementById('nav-initial').innerText = user.nama ? user.nama.charAt(0).toUpperCase() : "U";
+      } catch (e) { console.error(e); }
+  } else {
       window.location.href = '/';
-    }
+  }
+
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+      if(confirm("Yakin ingin keluar?")) {
+          localStorage.clear();
+          window.location.href = '/'; 
+      }
+  });
+
+  // --- 2. NOTIF LOGIC ---
   
-    // 2. Logika Logout
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-         // Konfirmasi sederhana (atau bisa panggil showConfirm global kamu)
-         if(confirm("Apakah Anda yakin ingin keluar?")) {
-             localStorage.removeItem('token');
-             localStorage.removeItem('user');
-             window.location.href = '/'; // Kembali ke root/login
-         }
+  window.openNotifModal = async () => {
+      document.getElementById('modal_notif').showModal();
+      await fetchNotifications(true); // Fetch & Render List
+  };
+
+  window.markAllRead = async () => {
+      // Optimistic UI update (biar kerasa cepet)
+      document.getElementById('notif-badge').classList.add('hidden');
+      const unreadItems = document.querySelectorAll('.notif-unread');
+      unreadItems.forEach(el => {
+          el.classList.remove('bg-blue-50', 'border-l-4', 'border-primary', 'notif-unread');
+          el.classList.add('bg-white');
+          const dot = el.querySelector('.unread-dot');
+          if(dot) dot.remove();
       });
-    }
-  </script>
+
+      // Request ke Backend
+      await putData('/notifications/read-all', {});
+      // Refresh data asli di background
+      fetchNotifications(false);
+  };
+
+  window.handleNotifClick = async (id, link, isRead) => {
+      if(!isRead) {
+          await putData(`/notifications/${id}/read`, {});
+          fetchNotifications(false); // Update badge
+      }
+      if(link && link !== 'null' && link !== 'undefined') {
+          window.open(link, '_blank');
+      }
+  };
+
+  async function fetchNotifications(renderList = false) {
+      const badge = document.getElementById('notif-badge');
+      const listContainer = document.getElementById('notif-list');
+      const markReadContainer = document.getElementById('mark-read-container');
+
+      try {
+          const res = await getData('/notifications');
+          
+          // Cek struktur respon baru: res.data.data.notifications
+          if(res.ok && res.data && res.data.data) {
+              const { notifications, unread } = res.data.data;
+
+              // Update Badge
+              if(unread > 0) {
+                  badge.classList.remove('hidden');
+                  badge.innerText = unread > 99 ? '99+' : unread;
+                  if(markReadContainer) markReadContainer.classList.remove('hidden');
+              } else {
+                  badge.classList.add('hidden');
+                  if(markReadContainer) markReadContainer.classList.add('hidden');
+              }
+
+              // Render List
+              if(renderList && listContainer) {
+                  if(!notifications || notifications.length === 0) {
+                      listContainer.innerHTML = `
+                          <div class="flex flex-col items-center py-12 text-gray-400">
+                              <div class="bg-gray-200 rounded-full p-4 mb-3">
+                                  <i class="fa-regular fa-bell-slash text-2xl text-gray-500"></i>
+                              </div>
+                              <span class="text-sm font-medium">Tidak ada notifikasi</span>
+                          </div>
+                      `;
+                  } else {
+                      listContainer.innerHTML = notifications.map(n => {
+                          const isUnread = !n.is_read;
+                          // Styling Logic
+                          const containerClass = isUnread 
+                              ? 'bg-blue-50 border-l-4 border-primary notif-unread' 
+                              : 'bg-white opacity-90';
+                          
+                          const icon = n.tipe === 'download' ? 'fa-file-arrow-down' : 'fa-info-circle';
+                          const iconColor = isUnread ? 'text-primary' : 'text-gray-400';
+                          const iconBg = isUnread ? 'bg-primary/10' : 'bg-gray-100';
+                          
+                          const date = new Date(n.created_at).toLocaleDateString('id-ID', { 
+                              day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' 
+                          });
+
+                          return `
+                              <div onclick="handleNotifClick('${n.id}', '${n.link_url}', ${n.is_read})" 
+                                   class="p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-all ${containerClass} group relative overflow-hidden">
+                                  
+                                  <div class="flex gap-3">
+                                      <div class="mt-1 shrink-0">
+                                          <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center ${iconColor}">
+                                              <i class="fa-solid ${icon} text-lg"></i>
+                                          </div>
+                                      </div>
+                                      <div class="flex-1 min-w-0">
+                                          <div class="flex justify-between items-start gap-2">
+                                              <h4 class="text-sm font-bold text-gray-800 leading-tight ${isUnread ? 'text-primary' : ''}">${n.judul}</h4>
+                                              ${isUnread ? '<div class="w-2 h-2 bg-red-500 rounded-full shrink-0 unread-dot"></div>' : ''}
+                                          </div>
+                                          <p class="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">${n.pesan}</p>
+                                          
+                                          <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-100/50">
+                                              <span class="text-[10px] text-gray-400 font-medium">${date}</span>
+                                              ${n.link_url ? `
+                                                  <span class="text-[10px] text-blue-600 font-bold flex items-center gap-1 group-hover:underline">
+                                                      <i class="fa-solid fa-download"></i> Unduh
+                                                  </span>` : ''}
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          `;
+                      }).join('');
+                  }
+              }
+          }
+      } catch (error) {
+          console.error("Notif Error", error);
+          if(renderList && listContainer) {
+              listContainer.innerHTML = `<div class="text-center py-4 text-error text-sm">Gagal memuat notifikasi.</div>`;
+          }
+      }
+  }
+
+  // Auto load badge
+  document.addEventListener('DOMContentLoaded', () => {
+      fetchNotifications(false);
+      setInterval(() => fetchNotifications(false), 300000); // Refresh tiap 5 menit
+  });
+</script>
