@@ -1,88 +1,347 @@
 ---
+// src/pages/admin/index.astro
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import AlertSystem from '../../components/ui/AlertSystem.astro';
 ---
 
 <AdminLayout title="Dashboard Admin">
-  
-  <div class="mb-8">
+  <AlertSystem />
+
+  <style is:global>
+    @media print {
+      body * { visibility: hidden; }
+      #pdf-template, #pdf-template * { visibility: visible; }
+      #pdf-template {
+        position: absolute;
+        left: 0; top: 0; width: 100%;
+        display: block !important;
+        background: white;
+        padding: 20px;
+      }
+      /* Pastikan elemen lain hilang */
+      nav, aside, .no-print { display: none !important; }
+    }
+  </style>
+
+  <div class="mb-8 no-print">
     <h1 class="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
-    <p class="text-gray-500 mt-1">Selamat datang kembali, Administrator.</p>
+    <p class="text-gray-500 mt-1">Pantau perkembangan potensi akademik siswa.</p>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 no-print">
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+            <h2 class="card-title text-gray-500 text-sm">Total Guru Aktif</h2>
+            <p class="text-4xl font-extrabold text-primary mt-2" id="stat-guru">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><i class="fa-solid fa-chalkboard-user text-xl"></i></div>
+      </div>
+    </div>
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+            <h2 class="card-title text-gray-500 text-sm">Total Siswa</h2>
+            <p class="text-4xl font-extrabold text-secondary mt-2" id="stat-siswa">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary"><i class="fa-solid fa-user-graduate text-xl"></i></div>
+      </div>
+    </div>
+    <div class="card bg-white shadow-sm border border-gray-200">
+      <div class="card-body flex flex-row items-center justify-between">
+        <div>
+            <h2 class="card-title text-gray-500 text-sm">Total Kelas</h2>
+            <p class="text-4xl font-extrabold text-accent mt-2" id="stat-kelas">...</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent"><i class="fa-solid fa-school text-xl"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-white border border-gray-200 shadow-sm no-print">
+    <div class="card-body">
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">Rekapitulasi Potensi Siswa</h2>
+            <p class="text-sm text-gray-500">Pilih kelas untuk melihat data.</p>
+        </div>
+        
+        <div class="flex gap-2 w-full md:w-auto">
+            <select id="classSelect" class="select select-bordered select-sm w-full md:w-48">
+                <option disabled selected value="">-- Pilih Kelas --</option>
+            </select>
+            <button id="btnDownloadPDF" class="btn btn-sm btn-outline gap-2" disabled>
+                <i class="fa-solid fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                <tr>
+                    <th class="w-10">No</th>
+                    <th>Nama Siswa</th>
+                    <th class="text-center">Nilai Akhir</th>
+                    <th class="text-center">Potensi</th>
+                    <th>Rekomendasi Singkat</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="5" class="text-center py-10 text-gray-400">Silakan pilih kelas terlebih dahulu.</td>
+                </tr>
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <dialog id="confirmModal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg"><i class="fa-solid fa-circle-info text-info"></i> Konfirmasi Download</h3>
+      <p class="py-4">
+        Anda akan mengunduh laporan PDF untuk kelas ini.<br>
+        <span class="font-bold text-error text-sm">*Hanya siswa yang SUDAH DIPREDIKSI yang akan muncul dalam laporan.</span>
+      </p>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-ghost">Batal</button>
+          <button id="btnConfirmPrint" class="btn btn-primary text-white">Ya, Download</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="pdf-template" class="hidden font-sans text-black">
     
-    <div class="card bg-white shadow-sm border border-gray-200">
-      <div class="card-body flex flex-row items-center justify-between">
-        <div>
-          <h2 class="card-title text-gray-500 text-sm">Total Guru Aktif</h2>
-          <p class="text-4xl font-extrabold text-primary mt-2" id="stat-guru">...</p>
+    <div class="border-b-2 border-black pb-4 mb-6">
+        <h1 class="text-2xl font-bold uppercase text-center tracking-widest mb-1">Laporan Potensi Akademik</h1>
+        <div class="flex justify-between text-sm font-bold mt-4">
+            <span>KELAS: <span id="pdf-class-name">...</span></span>
+            <span>TOTAL SISWA TERDATA: <span id="pdf-total-students">0</span></span>
         </div>
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-          <i class="fa-solid fa-chalkboard-user text-xl"></i>
-        </div>
-      </div>
     </div>
 
-    <div class="card bg-white shadow-sm border border-gray-200">
-      <div class="card-body flex flex-row items-center justify-between">
-        <div>
-          <h2 class="card-title text-gray-500 text-sm">Total Siswa</h2>
-          <p class="text-4xl font-extrabold text-secondary mt-2" id="stat-siswa">...</p>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="border border-black p-4 text-center rounded">
+            <div class="text-xs font-bold uppercase mb-1">Potensi Aman</div>
+            <div class="text-3xl font-black" id="pdf-count-aman">0</div>
         </div>
-        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-          <i class="fa-solid fa-user-graduate text-xl"></i>
+        <div class="border border-black p-4 text-center rounded">
+            <div class="text-xs font-bold uppercase mb-1">Potensi Pantau</div>
+            <div class="text-3xl font-black" id="pdf-count-pantau">0</div>
         </div>
-      </div>
+        <div class="border border-black p-4 text-center rounded">
+            <div class="text-xs font-bold uppercase mb-1">Potensi Bimbingan</div>
+            <div class="text-3xl font-black" id="pdf-count-bimbingan">0</div>
+        </div>
     </div>
 
-    <div class="card bg-white shadow-sm border border-gray-200">
-      <div class="card-body flex flex-row items-center justify-between">
-        <div>
-          <h2 class="card-title text-gray-500 text-sm">Total Kelas</h2>
-          <p class="text-4xl font-extrabold text-accent mt-2" id="stat-kelas">...</p>
-        </div>
-        <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-          <i class="fa-solid fa-school text-xl"></i>
-        </div>
-      </div>
-    </div>
+    <table class="w-full text-xs border-collapse border border-black">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="border border-black p-2 w-10 text-center">No</th>
+                <th class="border border-black p-2 text-left">Nama Siswa</th>
+                <th class="border border-black p-2 text-center w-24">Potensi</th>
+                <th class="border border-black p-2 text-center w-20">Nilai Akhir</th>
+                <th class="border border-black p-2 text-left">Rekomendasi</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-table-body">
+            </tbody>
+    </table>
 
-  </div>
-
-  <div class="hero bg-base-100 rounded-2xl border border-gray-200 p-8">
-    <div class="hero-content text-center">
-      <div class="max-w-md">
-        <h1 class="text-2xl font-bold">Mulai Kelola Data</h1>
-        <p class="py-6">Silakan pilih menu di sidebar untuk mengelola data Guru atau mengirimkan dokumen.</p>
-        <a href="/admin/guru" class="btn btn-primary text-white">Ke Manajemen Guru</a>
-      </div>
+    <div class="mt-8 text-[10px] text-right italic">
+        Dicetak pada: <span id="pdf-date"></span>
     </div>
   </div>
 
 </AdminLayout>
 
 <script>
-  // Import helper getData yang benar
   import { getData } from '../../scripts/utils/api.js';
 
-  async function loadDashboardStats() {
-      // Cek token sekilas (opsional karena getData juga ngecek, tapi buat UX redirect bagus)
-      const token = localStorage.getItem('token');
-      if(!token) window.location.href = '/';
+  // Elements
+  const classSelect = document.getElementById('classSelect');
+  const tableBody = document.getElementById('tableBody');
+  const btnDownloadPDF = document.getElementById('btnDownloadPDF');
+  const confirmModal = document.getElementById('confirmModal');
+  const btnConfirmPrint = document.getElementById('btnConfirmPrint');
 
-      // Panggil endpoint backend (pastikan route backend benar)
-      // Sesuai controller kamu: /api/admin/guru/stats
-      const result = await getData('/admin/guru/stats');
+  // Stats Elements
+  const statGuru = document.getElementById('stat-guru');
+  const statSiswa = document.getElementById('stat-siswa');
+  const statKelas = document.getElementById('stat-kelas');
 
-      if(result.ok) {
-          // Update UI
-          document.getElementById('stat-guru').innerText = result.data.data.total_guru;
-          document.getElementById('stat-siswa').innerText = result.data.data.total_siswa;
-          document.getElementById('stat-kelas').innerText = result.data.data.total_kelas;
-      } else {
-          console.error("Gagal load stats:", result.data);
-      }
+  // State
+  let currentClassData = [];
+  let currentClassName = '';
+
+  // 1. Load Initial Stats & Classes
+  async function initDashboard() {
+    // Load Stats
+    const stats = await getData('/admin/guru/stats');
+    if(stats.ok) {
+        statGuru.innerText = stats.data.data.total_guru;
+        statSiswa.innerText = stats.data.data.total_siswa;
+        statKelas.innerText = stats.data.data.total_kelas;
+    }
+
+    // Load Classes Dropdown
+    const classes = await getData('/classes/all');
+    if(classes.ok) {
+        classes.data.data.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.text = `${c.nama_kelas} (${c.tahun_ajaran})`;
+            classSelect.appendChild(opt);
+        });
+    } else {
+        console.error("Gagal load kelas:", classes);
+        // Opsional: Handle error UI
+    }
   }
 
-  document.addEventListener('DOMContentLoaded', loadDashboardStats);
+  // 2. Handle Class Change (Load Table)
+  classSelect.addEventListener('change', async (e) => {
+    const classId = e.target.value;
+    currentClassName = e.target.options[e.target.selectedIndex].text;
+    
+    if(!classId) return;
+
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><span class="loading loading-dots"></span></td></tr>';
+    btnDownloadPDF.disabled = true;
+
+    // Tambahkan '/guru' agar sesuai dengan app.js
+    const res = await getData(`/admin/guru/predictions/${classId}`);
+    
+    if(res.ok) {
+        currentClassData = res.data.data;
+        renderTable(currentClassData);
+        btnDownloadPDF.disabled = currentClassData.filter(s => s.is_predicted).length === 0;
+    } else {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-error">Gagal memuat data.</td></tr>';
+    }
+  });
+
+  // 3. Render Table HTML
+  function renderTable(data) {
+    if(data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Belum ada siswa di kelas ini.</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = '';
+    data.forEach((s, index) => {
+        // Tentukan style opacity jika belum diprediksi
+        const opacityClass = s.is_predicted ? '' : 'opacity-50 bg-gray-50';
+        const statusBadge = s.is_predicted 
+            ? `<span class="badge badge-sm ${getBadgeColor(s.status_ui)} text-white">${s.status_ui}</span>` 
+            : '<span class="text-xs italic text-gray-400">Belum diprediksi</span>';
+        
+        // Truncate rekomendasi agar tabel rapi
+        const recShort = s.recommendation.length > 50 ? s.recommendation.substring(0, 50) + '...' : s.recommendation;
+
+        const row = `
+            <tr class="${opacityClass}">
+                <td class="font-bold text-gray-500">${index + 1}</td>
+                <td>
+                    <div class="font-bold">${s.nama}</div>
+                    <div class="text-[10px] text-gray-400">${s.nisn}</div>
+                </td>
+                <td class="text-center font-mono text-xs">${s.nilai_akhir || '-'}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-xs text-gray-600">${s.is_predicted ? recShort : '-'}</td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
+  }
+
+
+  function getShortRecommendation(status, text) {
+      if (!text) return "-";
+      const t = text.toLowerCase();
+
+      // Logika Mapping: Cek status dulu, baru cek kata kunci di teks aslinya
+      
+      // KATEGORI: AMAN
+      if (status === 'Aman') {
+          if (t.includes('tugas')) return "Tingkatkan Kedisiplinan";
+          return "Pertahankan & Pengayaan"; // Default Aman
+      }
+
+      // KATEGORI: PANTAU
+      if (status === 'Pantau') {
+          if (t.includes('tugas')) return "Perbanyak Latihan Tugas";
+          if (t.includes('ujian') || t.includes('materi')) return "Review Ulang Materi";
+          return "Pantau Perkembangan"; // Default Pantau
+      }
+
+      // KATEGORI: BIMBINGAN
+      if (status === 'Bimbingan') {
+          if (t.includes('disiplin')) return "Perbaiki Disiplin Belajar";
+          if (t.includes('remedial') || t.includes('ujian')) return "Wajib Remedial & Les";
+          return "Bimbingan Intensif"; // Default Bimbingan
+      }
+
+      return "Evaluasi Belajar"; // Fallback
+  }
+
+
+  function getBadgeColor(status) {
+    if(status === 'Aman') return 'badge-success';
+    if(status === 'Pantau') return 'badge-warning';
+    return 'badge-error';
+  }
+
+  // 4. Handle Download PDF
+  btnDownloadPDF.addEventListener('click', () => {
+    confirmModal.showModal();
+  });
+
+  btnConfirmPrint.addEventListener('click', () => {
+    // Populate Data Header
+    document.getElementById('pdf-class-name').innerText = currentClassName;
+    document.getElementById('pdf-date').innerText = new Date().toLocaleString('id-ID');
+    
+    // Filter Data
+    const predictedStudents = currentClassData.filter(s => s.is_predicted);
+    document.getElementById('pdf-total-students').innerText = predictedStudents.length;
+
+    // Hitung Stats
+    document.getElementById('pdf-count-aman').innerText = predictedStudents.filter(s => s.status_ui === 'Aman').length;
+    document.getElementById('pdf-count-pantau').innerText = predictedStudents.filter(s => s.status_ui === 'Pantau').length;
+    document.getElementById('pdf-count-bimbingan').innerText = predictedStudents.filter(s => s.status_ui === 'Bimbingan').length;
+
+    // Render Table PDF
+    const pdfBody = document.getElementById('pdf-table-body');
+    pdfBody.innerHTML = '';
+    
+    predictedStudents.forEach((s, i) => {
+        // [PERBAIKAN DISINI] Gunakan fungsi mapper yang baru dibuat
+        const shortRec = getShortRecommendation(s.status_ui, s.recommendation);
+
+        pdfBody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td class="border border-black p-2 text-center">${i + 1}</td>
+                <td class="border border-black p-2 font-bold">${s.nama}</td>
+                <td class="border border-black p-2 text-center uppercase font-bold text-[10px]">${s.status_ui}</td>
+                <td class="border border-black p-2 text-center">${s.nilai_akhir}</td>
+                <td class="border border-black p-2 text-xs">${shortRec}</td> 
+            </tr>
+        `);
+    });
+
+    // Trigger Print
+    setTimeout(() => {
+        window.print();
+    }, 300);
+  });
+
+  // Start
+  document.addEventListener('DOMContentLoaded', initDashboard);
 </script>

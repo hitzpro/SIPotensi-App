@@ -1,6 +1,7 @@
 import { getData, postData } from '../../utils/api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Definisi Elemen DOM
     const els = {
         classSelect: document.getElementById('classSelect'),
         loadingValidation: document.getElementById('loadingValidation'),
@@ -9,31 +10,25 @@ document.addEventListener('DOMContentLoaded', () => {
         readinessCount: document.getElementById('readinessCount'),
         btnPredict: document.getElementById('btnPredict'),
         aiOverlay: document.getElementById('aiProcessingOverlay'),
+        
+        // Modal & Splash Elements
         resultModal: document.getElementById('resultModal'),
-        resultTableBody: document.getElementById('resultTableBody'),
+        splashScreen: document.getElementById('splashScreen'),
+        splashStudentName: document.getElementById('splashStudentName'),
+        splashStatusContainer: document.getElementById('splashStatusContainer'),
         
-        // UI Stats
-        statSafe: document.getElementById('statSafe'),
-        statWarning: document.getElementById('statWarning'),
-        statDanger: document.getElementById('statDanger'),
         resultClassName: document.getElementById('resultClassName'),
+        resultCardContainer: document.getElementById('resultCardContainer'),
         
-        // PDF Elements (Template Hidden)
-        btnDownloadPDF: document.getElementById('btnDownloadPDF'),
-        pdfTemplate: document.getElementById('pdf-template'), // Tidak dipakai langsung, tapi pastikan ada
-        pdfClassName: document.getElementById('pdf-class-name'),
-        pdfPrintDate: document.getElementById('pdf-print-date'),
-        pdfStatSafe: document.getElementById('pdf-stat-safe'),
-        pdfStatWarning: document.getElementById('pdf-stat-warning'),
-        pdfStatDanger: document.getElementById('pdf-stat-danger'),
-        pdfTableBody: document.getElementById('pdf-table-body')
+        // Tombol Simpan (Pengganti PDF)
+        btnSaveData: document.getElementById('btnSaveData'),
     };
 
     let selectedClassId = null;
     let selectedClassName = '';
     let lastPredictionData = []; 
 
-    // --- 1. DATA LOADING & UI ---
+    // --- 1. DATA LOADING (Tetap Sama) ---
     async function loadClasses() {
         try {
             const res = await getData('/classes');
@@ -45,10 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     els.classSelect.appendChild(opt);
                 });
             }
-        } catch (error) {
-            console.error(error);
-            if(typeof showToast === 'function') showToast("Gagal memuat data kelas", "error");
-        }
+        } catch (error) { console.error(error); }
     }
 
     if (els.classSelect) {
@@ -63,14 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
             try {
                 const res = await getData(`/classes/${selectedClassId}/check-readiness`);
-                if (res.ok) {
-                    renderReadinessTable(res.data.data);
-                } else {
-                    if(typeof showToast === 'function') showToast(res.data.message, "error");
-                }
-            } catch (err) {
-                if(typeof showToast === 'function') showToast("Koneksi Error", "error");
-            } finally {
+                if (res.ok) renderReadinessTable(res.data.data);
+            } catch (err) { console.error(err); } 
+            finally {
                 els.loadingValidation.classList.add('hidden');
                 els.studentSection.classList.remove('hidden');
             }
@@ -81,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         els.studentTableBody.innerHTML = '';
         let readyCount = 0;
         if (!students || students.length === 0) {
-            els.studentTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Tidak ada siswa.</td></tr>';
             els.readinessCount.innerHTML = `<span class="text-gray-400">0 Siswa</span>`;
             return;
         }
@@ -107,147 +93,205 @@ document.addEventListener('DOMContentLoaded', () => {
             els.readinessCount.innerText = `${readyCount} / ${total} Siap`;
             els.btnPredict.disabled = false;
         } else {
-            els.readinessCount.className = "badge badge-lg badge-error text-white font-bold";
             els.readinessCount.innerText = `0 / ${total} Siap`;
             els.btnPredict.disabled = true;
         }
     }
 
+    // --- 2. PREDIKSI & SPLASH SCREEN LOGIC ---
     if (els.btnPredict) {
         els.btnPredict.addEventListener('click', async () => {
             if (!selectedClassId) return;
+            
             els.aiOverlay.classList.remove('hidden');
             els.aiOverlay.style.display = 'flex';
+            
             try {
+                // Request ke Backend -> Backend OTOMATIS SIMPAN (Upsert)
                 const res = await postData('/classes/predict-bulk', { id_kelas: selectedClassId });
-                if (res.ok) {
-                    lastPredictionData = res.data.data; // SAVE STATE
-                    renderResultModal(lastPredictionData);
-                    els.resultModal.showModal();
-                } else {
-                    if(typeof showToast === 'function') showToast(res.data.message || "Gagal", "error");
-                }
-            } catch (err) {
-                if(typeof showToast === 'function') showToast("Koneksi Putus", "error");
-            } finally {
+                
                 els.aiOverlay.classList.add('hidden');
                 els.aiOverlay.style.display = 'none';
+
+                if (res.ok) {
+                    lastPredictionData = res.data.data;
+                    
+                    // Render kartu
+                    renderResultCards(lastPredictionData);
+                    els.resultModal.showModal();
+
+                    // Putar Animasi Splash Screen
+                    playSplashScreen(lastPredictionData);
+
+                } else {
+                    if(window.showToast) window.showToast(res.data.message || "Gagal memproses AI", "error");
+                }
+            } catch (err) {
+                els.aiOverlay.classList.add('hidden');
+                els.aiOverlay.style.display = 'none';
+                console.error(err);
+                if(window.showToast) window.showToast("Terjadi kesalahan koneksi", "error");
             }
         });
     }
 
-    function generateAdvice(label, scores) {
-        if (label.includes('Tinggi')) return `<span class="text-success font-medium">✨ Kinerja sangat baik.</span>`;
-        const { tugas, uts, uas } = scores;
-        let lowest = Math.min(tugas, uts, uas);
-        if (lowest === tugas) return "Tingkatkan kedisiplinan pengumpulan tugas.";
-        if (lowest === uts) return "Perkuat materi paruh pertama semester.";
-        if (lowest === uas) return "Persiapan ujian akhir kurang maksimal.";
-        return "Perlu pendampingan intensif.";
+    function playSplashScreen(data) {
+        const splash = els.splashScreen;
+        splash.classList.remove('hidden'); // Tampilkan Splash Putih
+
+        // Ambil Data Teaser (Siswa pertama atau General)
+        const teaserName = data.length > 0 ? data[0].student_name : "KELAS";
+        const teaserStatus = data.length > 0 ? (data[0].prediction.status_ui || "SELESAI") : "SELESAI";
+
+        // Set Nama
+        els.splashStudentName.innerText = teaserName;
+
+        // Set Badge Status dengan Warna yang sesuai
+        let badgeColorClass = "badge-ghost";
+        if(teaserStatus === 'Aman') badgeColorClass = "bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200";
+        else if(teaserStatus === 'Pantau') badgeColorClass = "bg-yellow-400 text-white border-none shadow-lg shadow-yellow-200";
+        else badgeColorClass = "bg-red-500 text-white border-none shadow-lg shadow-red-200";
+
+        els.splashStatusContainer.innerHTML = `
+            <div class="badge badge-lg px-8 py-6 text-2xl font-black ${badgeColorClass}">
+                ${teaserStatus}
+            </div>
+        `;
+
+        // === TIMING LOGIC ===
+        // Total durasi animasi sekitar 3.5 detik (Wait Text 1 -> Text 2 -> Loading Bar -> Finish)
+        
+        setTimeout(() => {
+            // Sembunyikan Splash
+            splash.classList.add('hidden'); 
+        }, 3500); 
     }
 
-    // Advice untuk versi Text/PDF (Tanpa HTML tag)
-    function generatePdfTextAdvice(label, scores) {
-        if (label.includes('Tinggi')) return "Kinerja sangat baik. Pertahankan.";
-        const { tugas, uts, uas } = scores;
-        let lowest = Math.min(tugas, uts, uas);
-        if (lowest === tugas) return "Tingkatkan kedisiplinan tugas.";
-        if (lowest === uts) return "Perkuat materi awal semester.";
-        if (lowest === uas) return "Fokus materi ujian akhir.";
-        return "Pendampingan intensif.";
-    }
-
-    function renderResultModal(data) {
+    // --- 3. RENDER CARD (Tetap Sama dengan Wireframe) ---
+    function renderResultCards(data) {
         els.resultClassName.innerText = selectedClassName;
-        els.resultTableBody.innerHTML = '';
-        let cTinggi = 0, cSedang = 0, cRendah = 0;
+        els.resultCardContainer.innerHTML = '';
 
         data.forEach(item => {
-            const label = item.risk_label || '';
-            const scores = item.scores || { tugas: 0, uts: 0, uas: 0 };
+            const pred = item.prediction;
+            if (!pred) return;
+
+            const label = pred.label || '-'; 
+            const statusUI = pred.status_ui || '-'; 
+            const recommendation = pred.recommendation || '-';
+            const scores = item.scores || { rata_tugas: 0, nilai_uts: 0, nilai_uas: 0 };
+            const confidence = pred.confidence_percent || { aman: 0, pantau: 0, bimbingan: 0 };
+
+            let themeColor = ''; 
+            let confidenceScore = 0;
+
+            if (statusUI === 'Aman') {
+                themeColor = 'text-emerald-600';
+                confidenceScore = confidence.aman || 85; 
+            } else if (statusUI === 'Pantau') {
+                themeColor = 'text-yellow-600';
+                confidenceScore = confidence.pantau || 65;
+            } else {
+                themeColor = 'text-red-600';
+                confidenceScore = confidence.bimbingan || 40;
+            }
+
+            const nilaiAkhir = ((scores.rata_tugas + scores.nilai_uts + scores.nilai_uas) / 3).toFixed(1);
+
+            const cardHTML = `
+            <div class="flex flex-col gap-4 break-inside-avoid">
+                <div class="bg-white rounded-2xl p-6 shadow-sm text-center flex flex-col items-center justify-center">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Potensi - ${item.student_name} -</p>
+                    <h2 class="text-3xl font-black text-gray-800 uppercase tracking-wide">
+                        HASIL PREDIKSI <span class="${themeColor}">${statusUI}</span>
+                    </h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center min-h-[180px]">
+                        <div class="radial-progress ${themeColor}" style="--value:${confidenceScore}; --size:6rem; --thickness: 8px;" role="progressbar">
+                            <span class="text-lg font-bold text-gray-700">${confidenceScore}%</span>
+                        </div>
+                        <span class="text-xs text-gray-400 mt-3 font-bold uppercase">Tingkat Keyakinan AI</span>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[180px] space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-500 mb-1"><span>TUGAS</span> <span>${scores.rata_tugas}</span></div>
+                            <progress class="progress progress-primary w-full h-3" value="${scores.rata_tugas}" max="100"></progress>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-500 mb-1"><span>UTS</span> <span>${scores.nilai_uts}</span></div>
+                            <progress class="progress progress-info w-full h-3" value="${scores.nilai_uts}" max="100"></progress>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-gray-500 mb-1"><span>UAS</span> <span>${scores.nilai_uas}</span></div>
+                            <progress class="progress progress-secondary w-full h-3" value="${scores.nilai_uas}" max="100"></progress>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-700 rounded-2xl p-6 shadow-md text-white">
+                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4 opacity-90 border-b border-gray-600 pb-2">
+                        Kesimpulan dan Rekomendasi
+                    </h3>
+                    
+                    <div class="bg-white text-gray-800 rounded-xl p-5">
+                        <div class="grid grid-cols-2 gap-y-4 gap-x-8 text-sm mb-6">
+                            <div>
+                                <span class="block text-xs font-bold text-gray-400">Nama Siswa</span>
+                                <span class="font-semibold text-base">${item.student_name}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-xs font-bold text-gray-400">Nilai Akhir</span>
+                                <span class="font-semibold text-base">${nilaiAkhir}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-gray-400">Kelas</span>
+                                <span class="font-semibold text-base">${selectedClassName}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-xs font-bold text-gray-400">Potensi</span>
+                                <span class="badge ${themeColor === 'text-emerald-600' ? 'badge-success' : themeColor === 'text-yellow-600' ? 'badge-warning' : 'badge-error'} text-white font-bold mt-1">
+                                    ${label}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50">
+                            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Rekomendasi</p>
+                            <p class="text-sm italic text-gray-600 leading-relaxed">
+                                "${recommendation}"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="divider my-8"></div>
+            </div>
+            `;
+            els.resultCardContainer.insertAdjacentHTML('beforeend', cardHTML);
+        });
+    }
+
+    // --- 4. TOMBOL SIMPAN (Action: Tutup Modal & Show Toast) ---
+    if (els.btnSaveData) {
+        els.btnSaveData.addEventListener('click', () => {
+            // Karena Backend SUDAH menyimpan (Upsert) saat request 'predict-bulk',
+            // Tombol ini hanya bertugas memberi Feedback UX + Menutup Modal.
             
-            let badgeClass = '', statusText = '';
-            if (label.includes('Tinggi')) { cTinggi++; badgeClass = 'badge-success text-white'; statusText = 'Aman'; }
-            else if (label.includes('Cukup') || label.includes('Sedang')) { cSedang++; badgeClass = 'badge-warning text-white'; statusText = 'Pantau'; }
-            else { cRendah++; badgeClass = 'badge-error text-white'; statusText = 'Bimbingan'; }
+            // 1. Tampilkan Toast
+            if (window.showToast) {
+                window.showToast("Data hasil prediksi berhasil disimpan ke Database!", "success");
+            }
 
-            els.resultTableBody.insertAdjacentHTML('beforeend', `
-                <tr class="hover border-b">
-                    <td class="pl-4 py-3">
-                        <div class="font-bold text-sm">${item.student_name}</div>
-                        <div class="text-[10px] text-gray-400 font-mono">${item.nisn}</div>
-                    </td>
-                    <td class="text-center text-xs text-gray-500">${label}</td>
-                    <td class="text-center"><span class="badge ${badgeClass} text-[10px]">${statusText}</span></td>
-                    <td class="text-xs text-gray-600">${generateAdvice(label, scores)}</td>
-                </tr>
-            `);
-        });
+            // 2. Tutup Modal
+            els.resultModal.close();
 
-        els.statSafe.innerText = cTinggi;
-        els.statWarning.innerText = cSedang;
-        els.statDanger.innerText = cRendah;
-    }
-
-    // --- 2. NATIVE PRINT FUNCTION ---
-    
-    // Fungsi ini hanya mengisi data ke tabel template yang tersembunyi
-    function populatePdfTemplate() {
-        els.pdfClassName.innerText = selectedClassName;
-        els.pdfPrintDate.innerText = new Date().toLocaleString('id-ID');
-        els.pdfTableBody.innerHTML = '';
-
-        let cSafe = 0, cWarn = 0, cDanger = 0;
-
-        lastPredictionData.forEach((item, index) => {
-            const label = item.risk_label || '';
-            const scores = item.scores || {tugas:0, uts:0, uas:0};
-            let statusText = '', color = '#000';
-
-            // Menggunakan HEX Color agar aman
-            if (label.includes('Tinggi')) { cSafe++; statusText='AMAN'; color='#166534'; }
-            else if (label.includes('Cukup') || label.includes('Sedang')) { cWarn++; statusText='PANTAU'; color='#854d0e'; }
-            else { cDanger++; statusText='BIMBINGAN'; color='#991b1b'; }
-
-            els.pdfTableBody.insertAdjacentHTML('beforeend', `
-                <tr style="border-bottom: 1px solid #ccc;">
-                    <td style="padding:8px; border:1px solid #999; text-align:center;">${index+1}</td>
-                    <td style="padding:8px; border:1px solid #999;">
-                        <strong>${item.student_name}</strong><br>
-                        <span style="color:#666;">${item.nisn}</span>
-                    </td>
-                    <td style="padding:8px; border:1px solid #999; text-align:center;">${label}</td>
-                    <td style="padding:8px; border:1px solid #999; text-align:center; font-weight:bold; color:${color};">${statusText}</td>
-                    <td style="padding:8px; border:1px solid #999;">${generatePdfTextAdvice(label, scores)}</td>
-                </tr>
-            `);
-        });
-
-        els.pdfStatSafe.innerText = cSafe;
-        els.pdfStatWarning.innerText = cWarn;
-        els.pdfStatDanger.innerText = cDanger;
-    }
-
-    if (els.btnDownloadPDF) {
-        els.btnDownloadPDF.addEventListener('click', () => {
-            // 1. Masukkan data (Populate)
-            populatePdfTemplate();
-
-            // 2. TRIK ANTI BLANK: Pindahkan Template ke Root Body
-            // Ini memastikan template tidak terpengaruh oleh layout Dashboard (flex/grid/overflow)
-            document.body.appendChild(els.pdfTemplate);
-
-            // 3. Print
-            // Browser akan memblokir eksekusi JS sampai jendela print ditutup
-            window.print();
-
-            // 4. (Opsional) Kembalikan scroll bar jika hilang (kadang efek print)
-            document.body.style.overflow = 'auto';
-            
-            // Note: Kita tidak perlu memindahkan balik templatenya, 
-            // karena toh sudah hidden lagi di layar biasa.
+            // 3. (Opsional) Refresh halaman jika ingin reset status
+            // location.reload(); 
         });
     }
 
+    // Init
     loadClasses();
 });
