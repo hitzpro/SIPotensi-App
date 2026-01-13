@@ -2,131 +2,126 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import Alert from '../../../components/ui/Alert.astro';
 import FormInput from '../../../components/ui/FormInput.astro';
+import ToastSystem from '../../../components/ui/ToastSystem.astro';
 ---
 
-<AdminLayout title="Manajemen Guru">
-    
+<AdminLayout title="Manajemen Data">
+    <Alert />
+    <ToastSystem />
+
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Manajemen Guru</h1>
-            <p class="text-gray-500 text-sm">Kelola data pengajar dan mata pelajaran.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Manajemen Data</h1>
+            <p class="text-gray-500 text-sm">Kelola data Guru dan Kelas dalam satu tempat.</p>
         </div>
-        <button onclick="openModalGuru()" class="btn btn-primary text-white shadow-lg gap-2 hidden lg:flex">
-            <i class="fa-solid fa-plus"></i> Tambah Guru
-        </button>
+        
+        <div class="dropdown dropdown-end hidden lg:block"> 
+            <button tabindex="0" role="button" class="btn btn-primary text-white shadow-lg gap-2">
+                <i class="fa-solid fa-plus"></i> Tambah Data
+            </button>
+            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-2 border border-gray-100">
+                <li><a onclick="openModalGuru()"><i class="fa-solid fa-chalkboard-user text-primary"></i> Guru Baru</a></li>
+                <li><a onclick="openModalKelas()"><i class="fa-solid fa-school text-secondary"></i> Kelas Baru</a></li>
+            </ul>
+        </div>
     </div>
 
-    <Alert />
+    <div role="tablist" class="tabs tabs-boxed bg-gray-100 p-1 mb-6 w-fit mx-auto md:mx-0">
+        <a role="tab" class="tab tab-active transition-all duration-300 font-bold" id="tab-guru" onclick="switchTab('guru')">Data Guru</a>
+        <a role="tab" class="tab transition-all duration-300 font-bold" id="tab-kelas" onclick="switchTab('kelas')">Data Kelas</a>
+    </div>
 
-    <div class="card bg-white shadow-sm border border-gray-200 p-4 mb-4">
-        <div class="flex flex-col sm:flex-row gap-3">
-            <div class="form-control flex-1">
-                <div class="relative">
-                    <input type="text" id="search-input" placeholder="Cari Nama atau Email..." class="input input-bordered w-full pl-10" />
-                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
+    <div id="content-guru" class="fade-content">
+        <div class="card bg-white shadow-sm border border-gray-200 p-4 mb-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="form-control flex-1">
+                    <div class="relative">
+                        <input type="text" id="search-guru" placeholder="Cari Nama Guru..." class="input input-bordered input-sm w-full pl-9" />
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    </div>
                 </div>
             </div>
-            
-            <div class="form-control w-full sm:w-64">
-                <select id="filter-kelas-dashboard" class="select select-bordered w-full">
-                    <option value="">Semua Kelas</option>
-                    </select>
+        </div>
+
+        <div class="card bg-white shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th>Nama Guru</th>
+                            <th>Email</th>
+                            <th>Mapel (Kelas)</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guru-table-body">
+                        <tr><td colspan="4" class="text-center py-8 text-gray-400"><span class="loading loading-spinner"></span></td></tr>
+                    </tbody>
+                </table>
             </div>
-            
-            </div>
+        </div>
     </div>
 
-    <div class="card bg-white shadow-sm border border-gray-200 overflow-hidden mb-20">
-        <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
-                <thead class="bg-gray-50 text-gray-600">
-                    <tr>
-                        <th>Nama Guru</th>
-                        <th>Email / Akun</th>
-                        <th>Mata Pelajaran (Kelas)</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="guru-table-body">
-                    <tr>
-                        <td colspan="4" class="text-center py-8 text-gray-400">
-                            <span class="loading loading-spinner loading-md"></span> Memuat data...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <div id="content-kelas" class="fade-content hidden">
+        <div class="card bg-white shadow-sm border border-gray-200 p-4 mb-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="form-control flex-1">
+                    <div class="relative">
+                        <input type="text" id="search-kelas" placeholder="Cari Nama Kelas..." class="input input-bordered input-sm w-full pl-9" />
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="p-4 border-t border-gray-100 text-xs text-gray-400 flex justify-between items-center">
-            <span id="data-count">Menampilkan 0 guru</span>
-        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="kelas-grid-container">
+            </div>
+        <div id="empty-kelas" class="hidden text-center py-10 text-gray-400">Belum ada data kelas.</div>
     </div>
 
     <dialog id="modal_guru" class="modal">
         <div class="modal-box w-full max-w-2xl mx-4 sm:mx-auto relative">
-            
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="modal_guru.close()">✕</button>
-            
-            <h3 class="font-bold text-lg mb-4 border-b pb-2" id="modal-title">Tambah Guru Baru</h3>
+            <h3 class="font-bold text-lg mb-4 border-b pb-2" id="modal-title-guru">Tambah Guru Baru</h3>
             
             <form id="form-guru" class="flex flex-col gap-4">
                 <input type="hidden" id="guru-id" name="id"> 
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormInput id="nama" name="nama" label="Nama Lengkap" placeholder="Contoh: Budi Santoso, S.Pd" required={true} />
                     <FormInput id="email" type="email" name="email" label="Email Login" placeholder="budi@sekolah.id" required={true} />
                 </div>
-                
                 <div class="form-control w-full">
-                    <label class="label pt-0 pb-1">
-                        <span class="label-text text-gray-700 text-xs font-bold uppercase tracking-wide">Password</span>
-                    </label>
+                    <label class="label pt-0 pb-1"><span class="label-text text-gray-700 text-xs font-bold uppercase">Password</span></label>
                     <input type="password" id="password" name="password" class="input input-bordered w-full" placeholder="••••••••" />
-                    <label class="label">
-                        <span class="label-text-alt text-gray-400 text-xs" id="password-hint">*Wajib diisi untuk guru baru</span>
-                    </label>
+                    <label class="label"><span class="label-text-alt text-gray-400 text-xs" id="password-hint">*Wajib diisi untuk guru baru</span></label>
                 </div>
 
-                <div class="divider text-sm text-gray-400 font-medium">Jam Mengajar & Kelas</div>
-
-                <div id="alert-no-class" class="alert alert-warning text-xs py-2 hidden">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Belum ada data kelas. Silakan buat kelas dulu.</span>
-                    <button type="button" onclick="modal_kelas.showModal()" class="btn btn-xs btn-outline">Buat Kelas</button>
-                </div>
-                
+                <div class="divider text-sm text-gray-400 font-medium">Jam Mengajar</div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <div id="mapel-container" class="space-y-3"></div>
-                    
-                    <div class="flex gap-2 mt-4">
-                        <button type="button" onclick="addMapelRow()" class="btn btn-outline btn-sm flex-1 border-dashed border-gray-300 hover:border-primary text-gray-500 hover:text-primary">
-                            <i class="fa-solid fa-plus"></i> Tambah Mapel
-                        </button>
-                        <button type="button" onclick="modal_kelas.showModal()" class="btn btn-square btn-sm btn-ghost text-primary tooltip" data-tip="Buat Kelas Baru">
-                            <i class="fa-solid fa-school"></i>
-                        </button>
-                    </div>
+                    <button type="button" onclick="addMapelRow()" class="btn btn-outline btn-sm btn-block mt-4 border-dashed border-gray-300 hover:border-primary text-gray-500 hover:text-primary">
+                        <i class="fa-solid fa-plus"></i> Tambah Mapel
+                    </button>
                 </div>
 
                 <div class="modal-action">
                     <button type="button" class="btn btn-ghost" onclick="modal_guru.close()">Batal</button>
-                    <button type="submit" id="btn-save" class="btn btn-primary text-white">Simpan Data</button>
+                    <button type="submit" id="btn-save-guru" class="btn btn-primary text-white">Simpan Guru</button>
                 </div>
             </form>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-        </form>
     </dialog>
 
     <dialog id="modal_kelas" class="modal">
         <div class="modal-box w-full max-w-sm mx-auto">
-            <h3 class="font-bold text-lg mb-4">Buat Kelas Baru</h3>
-            <form id="form-quick-class" class="flex flex-col gap-3">
-                <FormInput id="new_nama_kelas" label="Nama Kelas" placeholder="X IPA 1" required={true} />
-                <FormInput id="new_tahun_ajaran" label="Tahun Ajaran" placeholder="2025/2026" required={true} />
+            <h3 class="font-bold text-lg mb-4" id="modal-title-kelas">Buat Kelas Baru</h3>
+            <form id="form-kelas" class="flex flex-col gap-3">
+                <input type="hidden" id="kelas-id" name="id"> <FormInput id="nama_kelas" name="nama_kelas" label="Nama Kelas" placeholder="X IPA 1" required={true} />
+                <FormInput id="tahun_ajaran" name="tahun_ajaran" label="Tahun Ajaran" placeholder="2025/2026" required={true} />
+                
                 <div class="modal-action">
                     <button type="button" class="btn btn-ghost" onclick="modal_kelas.close()">Batal</button>
-                    <button type="submit" class="btn btn-primary text-white">Simpan Kelas</button>
+                    <button type="submit" class="btn btn-primary text-white" id="btn-save-kelas">Simpan Kelas</button>
                 </div>
             </form>
         </div>
@@ -137,134 +132,138 @@ import FormInput from '../../../components/ui/FormInput.astro';
 <script>
     import { getData, postData, putData, deleteData } from '../../../scripts/utils/api.js';
 
-    let classesData = []; 
-    let allGuruData = []; 
+    // STATE
+    let allGuru = [];
+    let allKelas = [];
 
-    async function loadInitialData() {
-        try {
-            await refreshClasses(); 
-            await loadGuruTable();  
-        } catch (error) {
-            console.error("Init Error", error);
-        }
-    }
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDataGuru();
+        loadDataKelas();
+    });
 
-    // --- FETCH KELAS ---
-    async function refreshClasses() {
-        const resKelas = await getData('/admin/guru/classes'); 
-        
-        if(resKelas.ok && resKelas.data && resKelas.data.data) {
-            classesData = resKelas.data.data;
-            
-            const filterDashboard = document.getElementById('filter-kelas-dashboard');
-            let filterHtml = '<option value="">Semua Kelas</option>';
-            
-            if(classesData.length > 0) {
-                document.getElementById('alert-no-class').classList.add('hidden');
-                updateAllDropdowns();
+    // --- TABS LOGIC ---
+    window.switchTab = (tab) => {
+        const contentGuru = document.getElementById('content-guru');
+        const contentKelas = document.getElementById('content-kelas');
+        const tabGuru = document.getElementById('tab-guru');
+        const tabKelas = document.getElementById('tab-kelas');
 
-                classesData.forEach(c => {
-                    filterHtml += `<option value="${c.id}">${c.nama_kelas} (${c.tahun_ajaran})</option>`;
-                });
-            } else {
-                document.getElementById('alert-no-class').classList.remove('hidden');
-            }
-            filterDashboard.innerHTML = filterHtml;
-        }
-    }
-
-    // --- FETCH GURU ---
-    async function loadGuruTable() {
-        const tbody = document.getElementById('guru-table-body');
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8"><span class="loading loading-spinner"></span></td></tr>`;
-
-        const res = await getData('/admin/guru'); 
-
-        if(res.ok && res.data.data) {
-            allGuruData = res.data.data;
-            renderTable(allGuruData);    
+        if(tab === 'guru') {
+            contentGuru.classList.remove('hidden');
+            contentKelas.classList.add('hidden');
+            tabGuru.classList.add('tab-active', 'bg-white', 'text-primary');
+            tabKelas.classList.remove('tab-active', 'bg-white', 'text-primary');
         } else {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500 italic">Belum ada data guru.</td></tr>`;
+            contentGuru.classList.add('hidden');
+            contentKelas.classList.remove('hidden');
+            tabKelas.classList.add('tab-active', 'bg-white', 'text-primary');
+            tabGuru.classList.remove('tab-active', 'bg-white', 'text-primary');
         }
     }
 
-    // --- RENDER & FILTER ---
-    function renderTable(data) {
-        const tbody = document.getElementById('guru-table-body');
-        const countLabel = document.getElementById('data-count');
-        
-        countLabel.innerText = `Menampilkan ${data.length} guru`;
+    // --- DATA LOADING ---
+    async function loadDataGuru() {
+        const res = await getData('/admin/guru');
+        if(res.ok && res.data.data) {
+            allGuru = res.data.data;
+            renderGuruTable(allGuru);
+        }
+    }
 
-        if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500 italic">Data tidak ditemukan.</td></tr>`;
+    async function loadDataKelas() {
+        const res = await getData('/admin/guru/classes');
+        if(res.ok && res.data.data) {
+            allKelas = res.data.data;
+            renderKelasGrid(allKelas);
+        }
+    }
+
+    // --- RENDER GURU ---
+    function renderGuruTable(data) {
+        const tbody = document.getElementById('guru-table-body');
+        if(data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-400">Data kosong</td></tr>`;
             return;
         }
-
-        tbody.innerHTML = data.map(guru => {
-            const mapelBadges = guru.mengajar.length > 0 
-                ? guru.mengajar.map(m => 
-                    `<span class="badge badge-ghost badge-sm mr-1 mb-1 border-gray-300 bg-white">${m.mapel} (${m.nama_kelas || '?'})</span>`
-                  ).join('')
-                : '<span class="text-xs text-gray-400 italic">Belum ada jam</span>';
-
-            const mapelJson = JSON.stringify(guru.mengajar).replace(/"/g, '&quot;');
+        tbody.innerHTML = data.map(g => {
+            const mapelBadges = g.mengajar.length > 0 
+                ? g.mengajar.map(m => `<span class="badge badge-ghost badge-sm mr-1 mb-1 border-gray-300 bg-white">${m.mapel} (${m.nama_kelas})</span>`).join('')
+                : '<span class="text-xs text-gray-400 italic"> - </span>';
+            
+            // Safe JSON for onclick
+            const mapelJson = JSON.stringify(g.mengajar).replace(/"/g, '&quot;');
 
             return `
             <tr class="hover">
-                <td>
-                    <div class="font-bold text-gray-800">${guru.nama}</div>
-                </td>
-                <td class="text-sm text-gray-600">${guru.email}</td>
+                <td><div class="font-bold text-gray-800">${g.nama}</div></td>
+                <td class="text-sm text-gray-600">${g.email}</td>
                 <td>${mapelBadges}</td>
                 <td class="text-center">
-                    <div class="join">
-                        <button class="btn btn-sm btn-square btn-ghost join-item text-blue-600 hover:bg-blue-50" 
-                            onclick="editGuru('${guru.id}', '${guru.nama}', '${guru.email}', '${mapelJson}')">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button class="btn btn-sm btn-square btn-ghost join-item text-red-500 hover:bg-red-50" 
-                            onclick="deleteGuru('${guru.id}', '${guru.nama}')">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-sm btn-square btn-ghost text-blue-600" onclick="editGuru('${g.id}', '${g.nama}', '${g.email}', '${mapelJson}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm btn-square btn-ghost text-red-500" onclick="deleteGuru('${g.id}', '${g.nama}')"><i class="fa-solid fa-trash"></i></button>
                 </td>
-            </tr>
-            `;
+            </tr>`;
         }).join('');
     }
 
-    function filterGuru() {
-        const keyword = document.getElementById('search-input').value.toLowerCase();
-        const filterClassId = document.getElementById('filter-kelas-dashboard').value;
-
-        const filtered = allGuruData.filter(guru => {
-            const matchSearch = guru.nama.toLowerCase().includes(keyword) || 
-                                guru.email.toLowerCase().includes(keyword);
-
-            // Filter Kelas: Guru lolos jika mengajar di kelas tsb ATAU filter kosong
-            const matchClass = filterClassId === "" || 
-                               guru.mengajar.some(m => m.id_kelas === filterClassId);
-
-            return matchSearch && matchClass;
-        });
-
-        renderTable(filtered);
+    // --- RENDER KELAS (GRID CARD) ---
+    function renderKelasGrid(data) {
+        const container = document.getElementById('kelas-grid-container');
+        const emptyState = document.getElementById('empty-kelas');
+        
+        if(data.length === 0) {
+            container.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        
+        emptyState.classList.add('hidden');
+        container.innerHTML = data.map(c => `
+            <div class="card bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all group">
+                <div class="card-body p-5 flex flex-row justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-800">${c.nama_kelas}</h3>
+                        <p class="text-sm text-gray-500 font-mono">${c.tahun_ajaran}</p>
+                    </div>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="btn btn-square btn-sm btn-ghost text-warning" onclick="editKelas('${c.id}', '${c.nama_kelas}', '${c.tahun_ajaran}')">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn btn-square btn-sm btn-ghost text-error" onclick="deleteKelas('${c.id}', '${c.nama_kelas}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
     }
 
-    document.getElementById('search-input').addEventListener('input', filterGuru);
-    document.getElementById('filter-kelas-dashboard').addEventListener('change', filterGuru);
+    // --- MODAL HANDLERS ---
 
-
-    // --- GLOBAL HANDLERS ---
-
+    // 1. GURU HANDLERS
     window.openModalGuru = () => {
         document.getElementById('form-guru').reset();
         document.getElementById('guru-id').value = ''; 
-        document.getElementById('modal-title').innerText = "Tambah Guru Baru";
-        document.getElementById('password-hint').innerText = "*Wajib diisi untuk guru baru";
+        document.getElementById('modal-title-guru').innerText = "Tambah Guru Baru";
         document.getElementById('mapel-container').innerHTML = ''; 
+        window.addMapelRow(); 
+        document.getElementById('modal_guru').showModal();
+    };
+
+    window.editGuru = (id, nama, email, mapelJson) => {
+        document.getElementById('guru-id').value = id;
+        document.getElementById('nama').value = nama;
+        document.getElementById('email').value = email;
+        document.getElementById('password').value = ''; 
+        document.getElementById('modal-title-guru').innerText = "Edit Data Guru";
         
-        window.addMapelRow();
+        const mapelList = JSON.parse(mapelJson);
+        const container = document.getElementById('mapel-container');
+        container.innerHTML = ''; 
+        if(mapelList.length > 0) mapelList.forEach(m => window.addMapelRow(m.id_kelas, m.mapel));
+        else window.addMapelRow();
+        
         document.getElementById('modal_guru').showModal();
     };
 
@@ -272,79 +271,50 @@ import FormInput from '../../../components/ui/FormInput.astro';
         const container = document.getElementById('mapel-container');
         const uniqueId = Date.now() + Math.random().toString(36).substr(2, 9);
         
+        let options = `<option value="" disabled ${!selectedClassId ? 'selected' : ''}>Pilih Kelas...</option>`;
+        allKelas.forEach(c => {
+            options += `<option value="${c.id}" ${c.id === selectedClassId ? 'selected' : ''}>${c.nama_kelas}</option>`;
+        });
+
         const rowHtml = `
             <div class="flex gap-2 items-end mapel-row animate-fade-in" id="row-${uniqueId}">
                 <div class="form-control w-1/3">
-                    <label class="label py-0"><span class="label-text-alt text-xs">Kelas</span></label>
-                    <select class="select select-bordered select-sm w-full mapel-kelas-select bg-white" required>
-                        </select>
+                    <label class="label py-0 text-xs">Kelas</label>
+                    <select class="select select-bordered select-sm w-full mapel-kelas-select bg-white">${options}</select>
                 </div>
                 <div class="form-control w-2/3">
-                    <label class="label py-0"><span class="label-text-alt text-xs">Mata Pelajaran</span></label>
-                    <input type="text" class="input input-bordered input-sm w-full mapel-name-input" 
-                        placeholder="Cth: Matematika" value="${mapelName}" required />
+                    <label class="label py-0 text-xs">Mapel</label>
+                    <input type="text" class="input input-bordered input-sm w-full mapel-name-input" value="${mapelName}" placeholder="Matematika" />
                 </div>
-                <button type="button" class="btn btn-square btn-sm btn-ghost text-red-400 hover:bg-red-50 mb-[1px]" 
-                    onclick="document.getElementById('row-${uniqueId}').remove()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <button type="button" class="btn btn-square btn-sm btn-ghost text-red-400" onclick="document.getElementById('row-${uniqueId}').remove()"><i class="fa-solid fa-xmark"></i></button>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', rowHtml);
-        
-        const selectEl = document.getElementById(`row-${uniqueId}`).querySelector('select');
-        populateSelect(selectEl, selectedClassId);
-    }
-
-    function populateSelect(selectEl, selectedValue) {
-        let options = `<option value="" disabled ${!selectedValue ? 'selected' : ''}>Pilih...</option>`;
-        if (classesData.length > 0) {
-            options += classesData.map(c => 
-                `<option value="${c.id}" ${c.id === selectedValue ? 'selected' : ''}>${c.nama_kelas}</option>`
-            ).join('');
-        } else {
-            options = `<option value="" disabled>Kelas Kosong</option>`;
-        }
-        selectEl.innerHTML = options;
-    }
-
-    function updateAllDropdowns() {
-        const selects = document.querySelectorAll('.mapel-kelas-select');
-        selects.forEach(sel => {
-            const currentVal = sel.value;
-            populateSelect(sel, currentVal);
-        });
-    }
-
-    window.editGuru = (id, nama, email, mapelJson) => {
-        document.getElementById('guru-id').value = id;
-        document.getElementById('nama').value = nama;
-        document.getElementById('email').value = email;
-        document.getElementById('password').value = ''; 
-        document.getElementById('modal-title').innerText = "Edit Data Guru";
-        document.getElementById('password-hint').innerText = "*Kosongkan jika tidak ingin ubah pass";
-
-        const mapelList = JSON.parse(mapelJson);
-        const container = document.getElementById('mapel-container');
-        container.innerHTML = ''; 
-
-        if(mapelList.length > 0) {
-            mapelList.forEach(m => window.addMapelRow(m.id_kelas, m.mapel));
-        } else {
-            window.addMapelRow(); 
-        }
-        document.getElementById('modal_guru').showModal();
     };
 
-    // --- FORM SUBMIT HANDLERS ---
+    // 2. KELAS HANDLERS
+    window.openModalKelas = () => {
+        document.getElementById('form-kelas').reset();
+        document.getElementById('kelas-id').value = '';
+        document.getElementById('modal-title-kelas').innerText = "Buat Kelas Baru";
+        document.getElementById('modal_kelas').showModal();
+    };
 
-    // 1. Submit Guru
+    window.editKelas = (id, nama, tahun) => {
+        document.getElementById('kelas-id').value = id;
+        document.getElementById('nama_kelas').value = nama;
+        document.getElementById('tahun_ajaran').value = tahun;
+        document.getElementById('modal-title-kelas').innerText = "Edit Data Kelas";
+        document.getElementById('modal_kelas').showModal();
+    };
+
+    // --- FORM SUBMIT ---
+
+    // Submit Guru
     document.getElementById('form-guru').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('btn-save');
-        const originalText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Menyimpan...";
+        const btn = document.getElementById('btn-save-guru');
+        btn.disabled = true; btn.innerText = "Menyimpan...";
 
         const id = document.getElementById('guru-id').value;
         const payload = { 
@@ -352,7 +322,6 @@ import FormInput from '../../../components/ui/FormInput.astro';
             email: document.getElementById('email').value,
             mapel_list: []
         };
-        
         const pwd = document.getElementById('password').value;
         if(pwd) payload.password = pwd;
 
@@ -366,52 +335,91 @@ import FormInput from '../../../components/ui/FormInput.astro';
             const endpoint = id ? `/admin/guru/${id}` : '/admin/guru/create';
             const method = id ? putData : postData;
             const res = await method(endpoint, payload);
-
             if(res.ok) {
+                showToast('Data Guru Tersimpan!', 'success');
                 document.getElementById('modal_guru').close();
-                loadGuruTable();
-                alert("Berhasil disimpan!");
+                loadDataGuru();
             } else {
-                alert(res.data.message || "Gagal");
+                showToast(res.data.message || 'Gagal', 'error');
             }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = originalText;
-        }
+        } catch(e) { console.error(e); showToast('Error Sistem', 'error'); } 
+        finally { btn.disabled = false; btn.innerText = "Simpan Data"; }
     });
 
-    // 2. Quick Add Class
-    document.getElementById('form-quick-class').addEventListener('submit', async (e) => {
+    // Submit Kelas
+    document.getElementById('form-kelas').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('btn-save-kelas');
+        btn.disabled = true; btn.innerText = "Menyimpan...";
+
+        const id = document.getElementById('kelas-id').value;
         const payload = {
-            nama_kelas: document.getElementById('new_nama_kelas').value,
-            tahun_ajaran: document.getElementById('new_tahun_ajaran').value
+            nama_kelas: document.getElementById('nama_kelas').value,
+            tahun_ajaran: document.getElementById('tahun_ajaran').value
         };
 
         try {
-            const res = await postData('/admin/guru/classes', payload); 
-            if(res.ok) {
-                alert("Kelas berhasil dibuat!");
-                document.getElementById('modal_kelas').close();
-                document.getElementById('form-quick-class').reset();
-                await refreshClasses(); 
+            // Logic beda endpoint untuk create dan update? 
+            // Cek routes adminClassController. Biasanya update belum ada? 
+            // Jika belum ada update route, pakai create dulu atau tambahkan logic update di backend.
+            // ASUMSI: Kamu sudah/akan buat route update kelas. 
+            // Kalau belum, endpoint POST '/admin/guru/classes' hanya create.
+            // Kita pakai POST dulu untuk create. Untuk edit, backend perlu route PUT.
+            
+            // [FIX] Kita asumsikan hanya CREATE dulu sesuai request sebelumnya.
+            // Tapi request mu minta EDIT. Jadi Backend harus support PUT /classes/:id
+            
+            if(id) {
+                // Update
+                // TODO: Pastikan backend punya route PUT /admin/guru/classes/:id
+                alert("Fitur Edit Kelas di Backend perlu ditambahkan endpoint PUT.");
             } else {
-                alert(res.data.message || "Gagal buat kelas");
+                // Create
+                const res = await postData('/admin/guru/classes', payload);
+                if(res.ok) {
+                    showToast('Kelas Berhasil Dibuat!', 'success');
+                    document.getElementById('modal_kelas').close();
+                    loadDataKelas();
+                } else {
+                    showToast(res.data.message || 'Gagal', 'error');
+                }
             }
-        } catch (e) {
-            console.error(e);
-        }
+        } catch(e) { console.error(e); }
+        finally { btn.disabled = false; btn.innerText = "Simpan Kelas"; }
     });
 
-    // 3. Delete
+    // --- DELETE HANDLERS ---
     window.deleteGuru = async (id, nama) => {
-        if(await window.showConfirm('Hapus?', `Hapus ${nama}?`, 'Ya', 'danger')) {
+        if(await window.showConfirm('Hapus Guru?', `Hapus ${nama}?`, 'Ya, Hapus', 'danger')) {
             const res = await deleteData(`/admin/guru/${id}`);
-            if(res.ok) loadGuruTable();
+            if(res.ok) { showToast('Guru dihapus', 'success'); loadDataGuru(); }
         }
     };
 
-    document.addEventListener('DOMContentLoaded', loadInitialData);
+    window.deleteKelas = async (id, nama) => {
+        if(await window.showConfirm('Hapus Kelas?', `Hapus kelas ${nama}? Data siswa di dalamnya akan ikut terhapus!`, 'Ya, Hapus', 'danger')) {
+            const res = await deleteData(`/admin/guru/classes/${id}`);
+            if(res.ok) { showToast('Kelas dihapus', 'success'); loadDataKelas(); }
+            else { showToast('Gagal hapus kelas', 'error'); }
+        }
+    };
+
+    // --- SEARCH ---
+    document.getElementById('search-guru').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allGuru.filter(g => g.nama.toLowerCase().includes(term));
+        renderGuruTable(filtered);
+    });
+
+    document.getElementById('search-kelas').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allKelas.filter(c => c.nama_kelas.toLowerCase().includes(term));
+        renderKelasGrid(filtered);
+    });
+
 </script>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+</style>

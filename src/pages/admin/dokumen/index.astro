@@ -1,6 +1,5 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import Alert from '../../../components/ui/Alert.astro';
 import FormInput from '../../../components/ui/FormInput.astro';
 ---
 
@@ -13,7 +12,7 @@ import FormInput from '../../../components/ui/FormInput.astro';
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 space-y-6">
             <div class="card bg-white shadow-sm border border-gray-200">
                 <div class="card-body">
                     <form id="form-broadcast" class="space-y-4">
@@ -72,16 +71,53 @@ import FormInput from '../../../components/ui/FormInput.astro';
             </div>
         </div>
 
-        <div class="lg:col-span-1">
+        <div class="lg:col-span-1 space-y-4">
+            
             <div class="alert alert-info shadow-sm text-sm">
                 <i class="fa-solid fa-circle-info"></i>
                 <div>
                     <h3 class="font-bold">Info Pengiriman</h3>
                     <div class="text-xs">
-                        Dokumen yang dikirim akan muncul di menu notifikasi dashboard Guru.
+                        Dokumen yang dikirim akan muncul di notifikasi Guru.
                     </div>
                 </div>
             </div>
+
+            <div id="history-accordion" class="collapse collapse-arrow bg-white border border-gray-200 shadow-sm rounded-xl">
+                <input type="checkbox" id="history-toggle" /> 
+                <div class="collapse-title text-base font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-primary"></i> Riwayat Pengiriman
+                </div>
+                <div class="collapse-content px-0">
+                    <div class="px-4 pb-3 border-b border-gray-100 flex flex-col gap-2">
+                        <input type="text" id="history-search" placeholder="Cari dokumen..." class="input input-xs input-bordered w-full" />
+                        <select id="history-month" class="select select-xs select-bordered w-full">
+                            <option value="all">Semua Waktu</option>
+                            <option value="0">Januari</option>
+                            <option value="1">Februari</option>
+                            <option value="2">Maret</option>
+                            <option value="3">April</option>
+                            <option value="4">Mei</option>
+                            <option value="5">Juni</option>
+                            <option value="6">Juli</option>
+                            <option value="7">Agustus</option>
+                            <option value="8">September</option>
+                            <option value="9">Oktober</option>
+                            <option value="10">November</option>
+                            <option value="11">Desember</option>
+                        </select>
+                    </div>
+
+                    <div id="history-list" class="max-h-[400px] overflow-y-auto p-2 space-y-1">
+                        <div class="text-center py-6 text-xs text-gray-400">Memuat riwayat...</div>
+                    </div>
+                    
+                    <div class="px-4 py-2 text-[10px] text-center text-gray-400 border-t border-gray-100">
+                        Menampilkan <span id="history-count">0</span> data
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -89,11 +125,8 @@ import FormInput from '../../../components/ui/FormInput.astro';
         <div class="modal-box w-full max-w-lg h-[80vh] flex flex-col p-0 overflow-hidden bg-white">
             <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <h3 class="font-bold text-lg text-gray-800">Pilih Penerima</h3>
-                <form method="dialog">
-                    <button class="btn btn-sm btn-circle btn-ghost">✕</button>
-                </form>
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost">✕</button></form>
             </div>
-
             <div class="p-4 border-b border-gray-200 space-y-3 bg-white">
                 <div class="relative">
                     <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -107,88 +140,210 @@ import FormInput from '../../../components/ui/FormInput.astro';
                     <span class="text-xs text-gray-500 font-medium" id="total-guru-label">Total: 0</span>
                 </div>
             </div>
-
             <div class="flex-1 overflow-y-auto p-4 space-y-1 bg-white" id="list-guru-container">
-                <div class="text-center py-10 text-gray-400">
-                    <span class="loading loading-spinner"></span> Memuat data...
-                </div>
+                <div class="text-center py-10 text-gray-400"><span class="loading loading-spinner"></span> Memuat data...</div>
             </div>
-
             <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
-                <form method="dialog">
-                    <button class="btn btn-ghost text-gray-600">Batal</button>
-                </form>
-                <button onclick="saveSelection()" class="btn btn-primary text-white shadow-md">
-                    Simpan (<span id="btn-count">0</span>)
-                </button>
+                <form method="dialog"><button class="btn btn-ghost text-gray-600">Batal</button></form>
+                <button onclick="saveSelection()" class="btn btn-primary text-white shadow-md">Simpan (<span id="btn-count">0</span>)</button>
             </div>
         </div>
+    </dialog>
+
+    <dialog id="modal_history_detail" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box p-0">
+            <div class="bg-primary text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Detail Pengiriman</h3>
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost text-white">✕</button></form>
+            </div>
+            <div class="p-5">
+                <div class="mb-4">
+                    <h4 class="font-bold text-gray-800" id="detail-judul">-</h4>
+                    <p class="text-xs text-gray-500 mt-1" id="detail-date">-</p>
+                    <a href="#" target="_blank" id="detail-link" class="btn btn-xs btn-outline mt-2 gap-2"><i class="fa-solid fa-download"></i> Lihat File</a>
+                </div>
+                <div class="divider text-xs text-gray-400">Dikirim Kepada</div>
+                <div class="bg-gray-50 rounded-lg p-2 max-h-60 overflow-y-auto border border-gray-100" id="detail-recipients">
+                    <span class="loading loading-spinner loading-sm text-primary mx-auto block"></span>
+                </div>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
 </AdminLayout>
 
 <script>
-    import { getData } from '../../../scripts/utils/api.js';
+    import { getData, postData } from '../../../scripts/utils/api.js';
 
-    // STATE
+    // --- STATE ---
     let allGurus = [];
     let selectedSet = new Set();
     let fileSelected = false;
+    let historyData = []; // Store raw history
 
-    // --- 1. INITIAL LOAD ---
+    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', async () => {
-        await fetchGurus();
+        await Promise.all([fetchGurus(), fetchHistory()]);
         setupFileUpload();
         setupSearch();
+        setupHistoryUI();
     });
 
+    // --- HISTORY LOGIC ---
+    async function fetchHistory() {
+        try {
+            const res = await getData('/admin/guru/history-doc');
+            if(res.ok && res.data.data) {
+                historyData = res.data.data;
+                renderHistory(historyData.slice(0, 5)); // Default 5 latest
+            }
+        } catch(e) { console.error("History Error", e); }
+    }
+
+    function renderHistory(data) {
+        const container = document.getElementById('history-list');
+        document.getElementById('history-count').innerText = data.length;
+        
+        if(data.length === 0) {
+            container.innerHTML = `<div class="text-center py-6 text-xs text-gray-400">Tidak ada riwayat.</div>`;
+            return;
+        }
+
+        container.innerHTML = data.map(item => {
+            const date = new Date(item.created_at);
+            const dateStr = date.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: '2-digit'});
+            const recipientCount = item.recipients.length;
+            
+            // Encode data untuk onclick (hati-hati quote)
+            const recipientsJson = JSON.stringify(item.recipients).replace(/"/g, '&quot;');
+
+            return `
+                <div onclick="openHistoryDetail('${item.judul}', '${item.created_at}', '${item.link_url}', '${recipientsJson}')" 
+                     class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 cursor-pointer transition-all">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                            <i class="fa-solid fa-file-arrow-up text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-primary transition-colors">${item.judul}</p>
+                            <p class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <i class="fa-regular fa-calendar"></i> ${dateStr}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="badge badge-xs badge-ghost text-[10px]">${recipientCount} <i class="fa-solid fa-user ml-1 text-[8px]"></i></span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setupHistoryUI() {
+        // 1. Accordion Default State (Desktop Open, Mobile Closed)
+        const toggle = document.getElementById('history-toggle');
+        if(window.innerWidth >= 1024) {
+            toggle.checked = true; // Expanded on Desktop
+        } else {
+            toggle.checked = false; // Collapsed on Mobile
+        }
+
+        // 2. Filter & Search Logic
+        const searchInput = document.getElementById('history-search');
+        const monthSelect = document.getElementById('history-month');
+
+        const applyFilter = () => {
+            const term = searchInput.value.toLowerCase();
+            const month = monthSelect.value;
+
+            let filtered = historyData.filter(item => {
+                const matchesTerm = item.judul.toLowerCase().includes(term);
+                const itemDate = new Date(item.created_at);
+                const matchesMonth = month === 'all' || itemDate.getMonth().toString() === month;
+                return matchesTerm && matchesMonth;
+            });
+
+            // Limit 5 unless searching/filtering
+            if(term === '' && month === 'all') {
+                renderHistory(filtered.slice(0, 5));
+            } else {
+                renderHistory(filtered); // Show all matches
+            }
+        };
+
+        searchInput.addEventListener('input', applyFilter);
+        monthSelect.addEventListener('change', applyFilter);
+    }
+
+    // Modal Detail History
+    window.openHistoryDetail = async (judul, dateStr, link, recipientsJson) => {
+        document.getElementById('detail-judul').innerText = judul;
+        document.getElementById('detail-date').innerText = new Date(dateStr).toLocaleString('id-ID');
+        document.getElementById('detail-link').href = link;
+        
+        const ids = JSON.parse(recipientsJson);
+        const container = document.getElementById('detail-recipients');
+        container.innerHTML = '<span class="loading loading-spinner loading-sm text-primary mx-auto block"></span>';
+        
+        document.getElementById('modal_history_detail').showModal();
+
+        // Fetch user details from IDs
+        try {
+            const res = await postData('/admin/guru/history-recipients', { ids });
+            if(res.ok && res.data.data) {
+                const users = res.data.data;
+                if(users.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-400 text-center">Data user tidak ditemukan.</p>';
+                } else {
+                    container.innerHTML = users.map(u => `
+                        <div class="flex items-center gap-2 p-1.5 border-b border-gray-100 last:border-0">
+                            <div class="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] font-bold">
+                                ${u.nama.charAt(0)}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-gray-700 truncate">${u.nama}</p>
+                                <p class="text-[9px] text-gray-400 truncate">${u.email}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch(e) {
+            container.innerHTML = '<p class="text-xs text-error text-center">Gagal memuat penerima.</p>';
+        }
+    };
+
+    // --- EXISTING BROADCAST LOGIC (Keep it mostly same, just add fetchHistory call) ---
     async function fetchGurus() {
         const res = await getData('/admin/guru');
-        // PASTIKAN STRUKTUR RESPON SESUAI
         if(res.ok && res.data && res.data.data) {
             allGurus = res.data.data;
             document.getElementById('total-guru-label').innerText = `Total: ${allGurus.length}`;
-            renderGuruList(allGurus); // Render awal (hidden di modal)
-        } else {
-            console.error("Gagal ambil data guru:", res);
-            document.getElementById('list-guru-container').innerHTML = `<div class="text-center py-4 text-error text-sm">Gagal memuat data.</div>`;
+            renderGuruList(allGurus);
         }
     }
 
-    // --- 2. RENDER LIST ---
     function renderGuruList(gurus) {
         const container = document.getElementById('list-guru-container');
         if(!container) return;
-
         if(gurus.length === 0) {
             container.innerHTML = `<div class="text-center py-4 text-gray-400 text-sm">Tidak ditemukan</div>`;
             return;
         }
-
         container.innerHTML = gurus.map(g => `
             <label class="flex items-center gap-3 p-3 hover:bg-base-200 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-200">
                 <input type="checkbox" value="${g.id}" class="checkbox checkbox-sm checkbox-primary guru-checkbox" 
                     ${selectedSet.has(g.id) ? 'checked' : ''} onchange="toggleGuru('${g.id}')" />
-                
                 <div class="flex-1">
                     <div class="font-bold text-gray-800 text-sm">${g.nama}</div>
                     <div class="text-xs text-gray-500">${g.email}</div>
                 </div>
-                
-                ${g.mengajar && g.mengajar.length > 0 
-                    ? `<span class="badge badge-xs badge-ghost border-gray-300">${g.mengajar.length} Mapel</span>` 
-                    : ''}
             </label>
         `).join('');
     }
 
-    // --- 3. MODAL LOGIC ---
     window.openRecipientModal = () => {
-        // [FIX UTAMA] Reset input search saat modal dibuka agar list tidak "hilang"
         const searchInput = document.getElementById('search-guru');
         if(searchInput) searchInput.value = '';
-
-        // Render ulang data lengkap
         renderGuruList(allGurus);
         updateCheckAllState();
         document.getElementById('modal_recipient').showModal();
@@ -197,29 +352,20 @@ import FormInput from '../../../components/ui/FormInput.astro';
     window.toggleGuru = (id) => {
         if(selectedSet.has(id)) selectedSet.delete(id);
         else selectedSet.add(id);
-        
         updateCheckAllState();
         document.getElementById('btn-count').innerText = selectedSet.size;
     }
 
-    // Check All Logic
     document.getElementById('check-all')?.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
-        const visibleGurus = getVisibleGurus(); 
-
+        const visibleGurus = getVisibleGurus();
         visibleGurus.forEach(g => {
             if(isChecked) selectedSet.add(g.id);
             else selectedSet.delete(g.id);
         });
-
-        // Update UI checkbox satu-satu
         document.querySelectorAll('.guru-checkbox').forEach(cb => {
-            // Hanya update yang terlihat agar sesuai filter
-            if(visibleGurus.some(g => g.id === cb.value)) {
-                cb.checked = isChecked;
-            }
+            if(visibleGurus.some(g => g.id === cb.value)) cb.checked = isChecked;
         });
-        
         document.getElementById('btn-count').innerText = selectedSet.size;
     });
 
@@ -230,21 +376,16 @@ import FormInput from '../../../components/ui/FormInput.astro';
 
     function updateCheckAllState() {
         const visibleGurus = getVisibleGurus();
-        // Cek apakah SEMUA yang terlihat sudah dipilih
         const allSelected = visibleGurus.length > 0 && visibleGurus.every(g => selectedSet.has(g.id));
         document.getElementById('check-all').checked = allSelected;
     }
 
-    // Live Search
-    function setupSearch() {
-        document.getElementById('search-guru').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const filtered = allGurus.filter(g => g.nama.toLowerCase().includes(query) || g.email.toLowerCase().includes(query));
-            renderGuruList(filtered);
-            // Update state check-all sesuai hasil filter
-            updateCheckAllState();
-        });
-    }
+    document.getElementById('search-guru').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = allGurus.filter(g => g.nama.toLowerCase().includes(query) || g.email.toLowerCase().includes(query));
+        renderGuruList(filtered);
+        updateCheckAllState();
+    });
 
     window.saveSelection = () => {
         document.getElementById('recipient-count').innerText = `${selectedSet.size} Guru Dipilih`;
@@ -253,7 +394,6 @@ import FormInput from '../../../components/ui/FormInput.astro';
         validateForm();
     }
 
-    // --- 4. FILE UPLOAD UI ---
     function setupFileUpload() {
         const input = document.getElementById('file-input');
         input.addEventListener('change', (e) => {
@@ -273,20 +413,13 @@ import FormInput from '../../../components/ui/FormInput.astro';
 
     function validateForm() {
         const btn = document.getElementById('btn-send');
-        // Tombol aktif jika file ada DAN minimal 1 guru dipilih
-        if(fileSelected && selectedSet.size > 0) {
-            btn.disabled = false;
-        } else {
-            btn.disabled = true;
-        }
+        if(fileSelected && selectedSet.size > 0) btn.disabled = false;
+        else btn.disabled = true;
     }
 
-    // --- 5. SUBMIT ---
     document.getElementById('form-broadcast').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const total = selectedSet.size;
-        // Panggil alert system global
         const confirm = await window.showConfirm(
             'Kirim Dokumen?', 
             `Anda akan mengirim file kepada <b>${total} guru</b>.`,
@@ -305,7 +438,7 @@ import FormInput from '../../../components/ui/FormInput.astro';
         const token = localStorage.getItem('token');
 
         try {
-            const response = await fetch('http://localhost:3000/api/admin/guru/broadcast-doc', {
+            const response = await fetch('https://sipotensi-api.vercel.app/api/admin/guru/broadcast-doc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -315,18 +448,17 @@ import FormInput from '../../../components/ui/FormInput.astro';
 
             if(response.ok) {
                 alert("Berhasil! " + result.message);
-                
-                // RESET FORM SETELAH BERHASIL
                 document.getElementById('form-broadcast').reset();
                 selectedSet.clear();
                 window.saveSelection(); 
-                
-                // Reset UI File
                 document.getElementById('file-preview-area').classList.remove('hidden');
                 document.getElementById('file-name-display').classList.add('hidden');
                 document.getElementById('file-name-display').classList.remove('flex');
                 fileSelected = false;
                 validateForm();
+                
+                // UPDATE HISTORY SETELAH KIRIM
+                fetchHistory(); 
 
             } else {
                 alert(result.message || "Gagal mengirim dokumen.");
@@ -340,6 +472,18 @@ import FormInput from '../../../components/ui/FormInput.astro';
             btn.innerHTML = originalText;
         }
     });
+
+    function setupSearch() {
+        document.getElementById('search-guru').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allGurus.filter(g => 
+                g.nama.toLowerCase().includes(query) || 
+                g.email.toLowerCase().includes(query)
+            );
+            renderGuruList(filtered);
+            updateCheckAllState();
+        });
+    }
 </script>
 
 <style>
